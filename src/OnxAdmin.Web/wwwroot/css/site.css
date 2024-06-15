@@ -36,6 +36,67 @@ table {
   border-collapse: collapse;
 }
 
+/* site styles */
+/* basic light and dark mode */
+:root {
+  --white: #f5f5f5;
+  --black: #333;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--white);
+  color: var(--black);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: var(--black);
+    color: var(--white);
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem;
+}
+
+main {
+  flex: 1;
+}
+
+footer {
+  text-align: center;
+
+  & p {
+    font-size: 0.75rem;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* blazor styles */
 
 #blazor-error-ui {
