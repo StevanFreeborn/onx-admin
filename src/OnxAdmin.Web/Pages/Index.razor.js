@@ -1,5 +1,4 @@
 export function resizePrompt() {
-  console.log("resizePrompt");
   const prompt = document.getElementById("prompt");
 
   if (prompt === null) {
@@ -27,7 +26,7 @@ export function focusPrompt() {
     return;
   }
 
-  prompt.closest("form").style.outline = "2px solid #ffffff";
+  prompt.closest(".prompt-wrapper").style.outline = "2px solid #ffffff";
 }
 
 export function blurPrompt() {
@@ -37,5 +36,26 @@ export function blurPrompt() {
     return;
   }
 
-  prompt.closest("form").style.outline = "none";
+  prompt.closest(".prompt-wrapper").style.outline = "none";
+}
+
+export function scrollToBottom() {
+  const msgContainer = document.querySelector(".messages-container");
+
+  if (msgContainer === null) {
+    return;
+  }
+
+  msgContainer.scrollTop = msgContainer.scrollHeight;
+}
+
+export function resetPrompt() {
+  const prompt = document.getElementById("prompt");
+
+  if (prompt === null) {
+    return;
+  }
+
+  prompt.style.height = "1.5rem";
+  prompt.style.overflow = "hidden";
 }
