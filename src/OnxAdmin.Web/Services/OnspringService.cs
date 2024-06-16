@@ -171,7 +171,10 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
     var context = await LoginAsync(browser);
 
     var page = await context.NewPageAsync();
-    var json = @"{
+
+    try
+    {
+      var json = @"{
       ""filter"": """",
       ""hideReadOnly"": false,
       ""pageSize"": 1,
@@ -189,31 +192,37 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
       }
     }";
 
-    var body = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+      var body = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
 
-    var response = await page.APIRequest.PostAsync("/Admin/App/AppsListRead", new()
-    {
-      Headers = new Dictionary<string, string>
+      var response = await page.APIRequest.PostAsync("/Admin/App/AppsListRead", new()
       {
-        ["Content-Type"] = "application/json",
-      },
-      DataObject = body,
-    });
+        Headers = new Dictionary<string, string>
+        {
+          ["Content-Type"] = "application/json",
+        },
+        DataObject = body,
+      });
 
-    if (response.Ok is false)
-    {
-      throw new ToolException("Failed to get count of apps");
+      if (response.Ok is false)
+      {
+        throw new ToolException("Failed to get count of apps");
+      }
+
+      var count = await response.JsonAsync();
+      var totalProperty = count.Value.GetProperty("totalCount");
+
+      if (totalProperty.TryGetInt64(out var total) is false)
+      {
+        throw new ToolException("Failed to get count of apps");
+      }
+
+      return total.ToString();
     }
-
-    var count = await response.JsonAsync();
-    var totalProperty = count.Value.GetProperty("totalCount");
-
-    if (totalProperty.TryGetInt64(out var total) is false)
+    finally
     {
-      throw new ToolException("Failed to get count of apps");
+      await page.CloseAsync();
+      await context.CloseAsync();
     }
-
-    return total.ToString();
   }
 
   private async Task<IBrowserContext> LoginAsync(IBrowser browser)
