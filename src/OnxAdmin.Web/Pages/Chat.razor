@@ -133,6 +133,12 @@
     StateHasChanged();
   }
 
+  private void AddMessage(ChatMessageContent message)
+  {
+    _messages.Add(message);
+    StateHasChanged();
+  }
+
   private void UpdateRunningState(bool isRunning)
   {
     _isRunning = isRunning;
@@ -168,21 +174,29 @@
 
     await foreach (var content in response)
     {
-      messageContent = new(
-        content.Role ?? AuthorRole.Assistant,
-        content.Content,
-        modelId: content.ModelId,
-        innerContent: content.InnerContent,
-        encoding: content.Encoding,
-        metadata: content.Metadata
-      );
+      if (content.Role.HasValue)
+      {
+        messageContent = new(
+          content.Role ?? AuthorRole.Assistant,
+          content.Content,
+          modelId: content.ModelId,
+          innerContent: content.InnerContent,
+          encoding: content.Encoding,
+          metadata: content.Metadata
+        );
+      }
+
+      if (messageContent is null)
+      {
+        continue;
+      }
 
       messageContent.Content += content.Content;
     }
 
     if (messageContent is not null)
     {
-      _messages.Add(messageContent);
+      AddMessage(messageContent);
     }
 
     if (Module is not null)
