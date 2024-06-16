@@ -40,6 +40,7 @@ export function blurPrompt() {
 }
 
 export function scrollToBottom() {
+  console.log("scrollToBottom");
   const msgContainer = document.querySelector(".messages-container");
 
   if (msgContainer === null) {

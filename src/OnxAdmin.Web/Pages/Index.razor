@@ -7,9 +7,15 @@
   <div class="messages-container">
     @foreach (var message in messages)
     {
-      <div class="message message-@(message.Role.ToString().ToLower())">
-        <p>@((string)message)</p>
-      </div>
+      @foreach (var content in message.Content)
+      {
+        if (content is TextContent textContent)
+        {
+          <div class="message message-@(message.Role.ToString().ToLower())">
+            <p>@textContent.Text</p>
+          </div>
+        }
+      }
     }
     @if (string.IsNullOrWhiteSpace(_assistantResponse) is false)
     {
@@ -89,6 +95,17 @@
     }
   }
 
+  private void AddMessage(Message msg)
+  {
+    if (msg.Role is RoleType.User)
+    {
+      _prompt = string.Empty;
+    }
+
+    messages.Add(msg);
+    StateHasChanged();
+  }
+
   private async Task HandleSendButtonClick()
   {
     if (string.IsNullOrWhiteSpace(_prompt))
@@ -96,8 +113,7 @@
       return;
     }
 
-    messages.Add(new(RoleType.User, _prompt));
-    _prompt = string.Empty;
+    AddMessage(new(RoleType.User, _prompt));
 
     if (module is not null)
     {
@@ -105,20 +121,43 @@
       await module.InvokeVoidAsync("scrollToBottom");
     }
 
-    var assistantResponse = AnthropicService.GenerateResponseAsync(messages);
+    var initialResponse = await AnthropicService.GenerateResponseAsync(messages);
 
-    await foreach (var response in assistantResponse)
+    AddMessage(initialResponse.Message);
+
+    if (initialResponse.ToolCalls.Count > 0)
     {
-      _assistantResponse += response;
-      StateHasChanged();
-
-      if (module is not null)
+      foreach (var toolCall in initialResponse.ToolCalls)
       {
-        await module.InvokeVoidAsync("scrollToBottom");
+        var toolResult = await toolCall.InvokeAsync<string>();
+        AddMessage(new Message(toolCall, toolResult));
       }
+
+      var finalResponse = await AnthropicService.GenerateResponseAsync(messages);
+
+      AddMessage(new(RoleType.Assistant, finalResponse.Message));
     }
 
-    messages.Add(new(RoleType.Assistant, _assistantResponse));
-    _assistantResponse = string.Empty;
+    if (module is not null)
+    {
+      await module.InvokeVoidAsync("scrollToBottom");
+    }
+
+    // TODO: work on adding support for streaming tool calling
+    // var assistantResponse = AnthropicService.StreamResponseAsync(messages);
+
+    // await foreach (var response in assistantResponse)
+    // {
+    // _assistantResponse += response;
+    // StateHasChanged();
+    //
+    // if (module is not null)
+    // {
+    // await module.InvokeVoidAsync("scrollToBottom");
+    // }
+    // }
+
+    // messages.Add(new(RoleType.Assistant, _assistantResponse));
+    // _assistantResponse = string.Empty;
   }
 }
