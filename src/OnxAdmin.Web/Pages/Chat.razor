@@ -18,6 +18,12 @@
         </div>
       }
     }
+    @if (string.IsNullOrWhiteSpace(_assistantResponse) is false)
+    {
+      <div class="message message-assistant">
+        <p>@((MarkupString)Markdown.ToHtml(_assistantResponse, _pipeline))</p>
+      </div>
+    }
     @if (_isRunning)
     {
       <div class="message message-assistant">
@@ -170,8 +176,12 @@
       kernel: Kernel
     );
 
+    UpdateRunningState(false);
+
     ChatMessageContent? messageContent = null;
 
+    // TODO: This is message. Need to centralize the updating of the
+    // state and calling state has changed and scrolling to bottom
     await foreach (var content in response)
     {
       if (content.Role.HasValue)
@@ -191,11 +201,14 @@
         continue;
       }
 
+      _assistantResponse += content.Content;
+      StateHasChanged();
       messageContent.Content += content.Content;
     }
 
     if (messageContent is not null)
     {
+      _assistantResponse = string.Empty;
       AddMessage(messageContent);
     }
 
@@ -203,7 +216,5 @@
     {
       await Module.InvokeVoidAsync("scrollToBottom");
     }
-
-    UpdateRunningState(false);
   }
 }
