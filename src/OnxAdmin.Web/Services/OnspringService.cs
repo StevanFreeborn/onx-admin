@@ -337,7 +337,7 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
       return Browser;
     }
 
-    var playwright = await Playwright.CreateAsync();
+    using var playwright = await Playwright.CreateAsync();
     var browser = await playwright.Chromium.LaunchAsync();
 
     Browser = browser;
