@@ -18,9 +18,19 @@
 
   & .message {
     display: flex;
+    flex-direction: column;
+
+    & a {
+      color: #2196f3;
+      text-decoration: none;
+    }
+
+    & a:hover {
+      text-decoration: underline;
+    }
 
     &.message-user {
-      justify-content: flex-end;
+      align-items: flex-end;
 
       & p {
         background-color: #212121;
@@ -31,7 +41,7 @@
     }
 
     &.message-assistant {
-      justify-content: flex-start;
+      align-items: flex-start;
 
       & .typing {
         display: flex;

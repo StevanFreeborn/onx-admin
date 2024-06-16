@@ -64,7 +64,13 @@ class AnthropicService(HttpClient httpClient, IOptions<AnthropicOptions> options
 
     var msgParams = new MessageParameters()
     {
-      SystemMessage = "You are a helpful and knowledge administrator of the Onspring platform. Your job is to assist the user to the best of your ability using the knowledge you have about the platform and the tools you have available to you.",
+      SystemMessage = """
+        You are a helpful and knowledge administrator of the Onspring platform. 
+        Your job is to assist the user to the best of your ability using the knowledge you have about the platform and the tools you have available to you. 
+        You should write your responses in a way that is helpful and informative to the user. 
+        You should also be polite and professional in your responses.
+        You should format your responses using Markdown to make them easier to read.
+      """,
       Messages = messages,
       Model = AnthropicModels.Claude3Haiku,
       MaxTokens = 1024,

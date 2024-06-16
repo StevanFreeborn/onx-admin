@@ -15,3 +15,5 @@ global using System.Net;
 global using Microsoft.Extensions.Http.Resilience;
 
 global using Microsoft.Playwright;
+
+global using Markdig;

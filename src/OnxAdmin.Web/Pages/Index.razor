@@ -5,24 +5,24 @@
 
 <div class="container">
   <div class="messages-container">
-    @foreach (var message in messages)
+    @foreach (var message in _messages)
     {
       @foreach (var content in message.Content)
       {
         if (content is TextContent textContent)
         {
           <div class="message message-@(message.Role.ToString().ToLower())">
-            <p>@textContent.Text</p>
+            @((MarkupString)Markdown.ToHtml(textContent.Text, _pipeline))
           </div>
         }
       }
     }
-    @if (string.IsNullOrWhiteSpace(_assistantResponse) is false)
+    @* @if (string.IsNullOrWhiteSpace(_assistantResponse) is false)
     {
-      <div class="message message-assistant">
-        <p>@_assistantResponse</p>
-      </div>
-    }
+    <div class="message message-assistant">
+    <p>@_assistantResponse</p>
+    </div>
+    } *@
     @if (_isRunning)
     {
       <div class="message message-assistant">
@@ -54,14 +54,15 @@
   private string _prompt { get; set; } = string.Empty;
   private string _assistantResponse { get; set; } = string.Empty;
   private bool _isRunning = false;
-  private IJSObjectReference? module;
-  private List<Message> messages = new List<Message>();
+  private readonly List<Message> _messages = new List<Message>();
+  private IJSObjectReference? Module;
+  private readonly MarkdownPipeline _pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
   {
     if (firstRender)
     {
-      module = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Index.razor.js");
+      Module = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Index.razor.js");
     }
   }
 
@@ -69,9 +70,9 @@
   {
     try
     {
-      if (module is not null)
+      if (Module is not null)
       {
-        await module.DisposeAsync();
+        await Module.DisposeAsync();
       }
     }
     catch (Exception ex) when (ex is JSDisconnectedException)
@@ -82,17 +83,17 @@
 
   private async Task HandlePromptFocus()
   {
-    if (module is not null)
+    if (Module is not null)
     {
-      await module.InvokeVoidAsync("focusPrompt");
+      await Module.InvokeVoidAsync("focusPrompt");
     }
   }
 
   private async Task HandlePromptBlur()
   {
-    if (module is not null)
+    if (Module is not null)
     {
-      await module.InvokeVoidAsync("blurPrompt");
+      await Module.InvokeVoidAsync("blurPrompt");
     }
   }
 
@@ -100,9 +101,9 @@
   {
     _prompt = e?.Value?.ToString() ?? string.Empty;
 
-    if (module is not null)
+    if (Module is not null)
     {
-      await module.InvokeVoidAsync("resizePrompt");
+      await Module.InvokeVoidAsync("resizePrompt");
     }
   }
 
@@ -113,7 +114,7 @@
       _prompt = string.Empty;
     }
 
-    messages.Add(msg);
+    _messages.Add(msg);
     StateHasChanged();
   }
 
@@ -134,46 +135,53 @@
 
     AddMessage(new(RoleType.User, _prompt));
 
-    if (module is not null)
+    if (Module is not null)
     {
-      await module.InvokeVoidAsync("resetPrompt");
-      await module.InvokeVoidAsync("scrollToBottom");
+      await Module.InvokeVoidAsync("resetPrompt");
+      await Module.InvokeVoidAsync("scrollToBottom");
     }
 
-    var initialResponse = await AnthropicService.GenerateResponseAsync(messages);
+    MessageResponse? response = null;
 
-    AddMessage(initialResponse.Message);
-
-    if (initialResponse.ToolCalls.Count > 0)
+    do
     {
-      foreach (var toolCall in initialResponse.ToolCalls)
+      if (response is not null && response.ToolCalls.Count > 0)
       {
-        try
+        foreach (var toolCall in response.ToolCalls)
         {
-          var toolResult = await toolCall.InvokeAsync<string>();
-          AddMessage(new Message(toolCall, toolResult));
-        }
-        catch (Exception ex) when (ex is ToolException)
-        {
-          var toolResult = new ToolResultContent()
-            {
-              ToolUseId = toolCall.Id,
-              Content = ex.Message,
-              IsError = true
-            };
+          try
+          {
+            var toolResult = await toolCall.InvokeAsync<string>();
+            AddMessage(new Message(toolCall, toolResult));
+          }
+          catch (Exception ex) when (ex is ToolException)
+          {
+            var toolResult = new ToolResultContent()
+              {
+                ToolUseId = toolCall.Id,
+                Content = ex.Message,
+                IsError = true
+              };
 
-          AddMessage(new Message() { Role = RoleType.User, Content = [toolResult] });
+            AddMessage(new Message() { Role = RoleType.User, Content = [toolResult] });
+          }
         }
+
+        response = await AnthropicService.GenerateResponseAsync(_messages);
+
+        AddMessage(response.Message);
       }
+      else
+      {
+        response = await AnthropicService.GenerateResponseAsync(_messages);
 
-      var finalResponse = await AnthropicService.GenerateResponseAsync(messages);
+        AddMessage(response.Message);
+      }
+    } while (response is not null && response.ToolCalls.Count > 0);
 
-      AddMessage(new(RoleType.Assistant, finalResponse.Message));
-    }
-
-    if (module is not null)
+    if (Module is not null)
     {
-      await module.InvokeVoidAsync("scrollToBottom");
+      await Module.InvokeVoidAsync("scrollToBottom");
     }
 
     UpdateRunningState(false);
