@@ -66,7 +66,7 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService
 
     if (response.Ok is false)
     {
-      throw new Exception("Failed to get count of apps");
+      throw new ToolException("Failed to get count of apps");
     }
 
     var count = await response.JsonAsync();
@@ -74,7 +74,7 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService
 
     if (totalProperty.TryGetInt64(out var total) is false)
     {
-      throw new Exception("Failed to get count of apps");
+      throw new ToolException("Failed to get count of apps");
     }
 
     return total.ToString();

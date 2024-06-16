@@ -23,6 +23,16 @@
         <p>@_assistantResponse</p>
       </div>
     }
+    @if (_isRunning)
+    {
+      <div class="message message-assistant">
+        <div class="typing">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    }
   </div>
   <div class="input-container">
     <div class="prompt-wrapper">
@@ -43,6 +53,7 @@
 {
   private string _prompt { get; set; } = string.Empty;
   private string _assistantResponse { get; set; } = string.Empty;
+  private bool _isRunning = false;
   private IJSObjectReference? module;
   private List<Message> messages = new List<Message>();
 
@@ -106,12 +117,20 @@
     StateHasChanged();
   }
 
+  private void UpdateRunningState(bool isRunning)
+  {
+    _isRunning = isRunning;
+    StateHasChanged();
+  }
+
   private async Task HandleSendButtonClick()
   {
     if (string.IsNullOrWhiteSpace(_prompt))
     {
       return;
     }
+
+    UpdateRunningState(true);
 
     AddMessage(new(RoleType.User, _prompt));
 
@@ -129,8 +148,22 @@
     {
       foreach (var toolCall in initialResponse.ToolCalls)
       {
-        var toolResult = await toolCall.InvokeAsync<string>();
-        AddMessage(new Message(toolCall, toolResult));
+        try
+        {
+          var toolResult = await toolCall.InvokeAsync<string>();
+          AddMessage(new Message(toolCall, toolResult));
+        }
+        catch (Exception ex) when (ex is ToolException)
+        {
+          var toolResult = new ToolResultContent()
+            {
+              ToolUseId = toolCall.Id,
+              Content = ex.Message,
+              IsError = true
+            };
+
+          AddMessage(new Message() { Role = RoleType.User, Content = [toolResult] });
+        }
       }
 
       var finalResponse = await AnthropicService.GenerateResponseAsync(messages);
@@ -142,6 +175,8 @@
     {
       await module.InvokeVoidAsync("scrollToBottom");
     }
+
+    UpdateRunningState(false);
 
     // TODO: work on adding support for streaming tool calling
     // var assistantResponse = AnthropicService.StreamResponseAsync(messages);

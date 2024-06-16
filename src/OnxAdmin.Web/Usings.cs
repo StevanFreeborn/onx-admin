@@ -8,6 +8,7 @@ global using Anthropic.SDK.Common;
 global using Microsoft.Extensions.Options;
 
 global using OnxAdmin.Web.Services;
+global using OnxAdmin.Web.Models;
 
 global using System.Net;
 
