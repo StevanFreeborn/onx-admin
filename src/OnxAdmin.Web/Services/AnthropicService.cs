@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using Tool = Anthropic.SDK.Common.Tool;
 
 namespace OnxAdmin.Web.Services;
@@ -54,15 +56,15 @@ class AnthropicService(HttpClient httpClient, IOptions<AnthropicOptions> options
     var tools = new List<Tool>
     {
       Tool.FromFunc("Get_Weather", ([FunctionParameter("Location of the weather", true)] string location) => "72 degrees and sunny"),
-      Tool.GetOrCreateTool(
-        _onspringService,
-        nameof(_onspringService.GetCountOfAppsAsync),
-        "This is a tool to get the total number of apps in an Onspring instance."
-      )
     };
+
+    var onspringTools = _onspringService.GetTools();
+
+    tools.AddRange(onspringTools);
 
     var msgParams = new MessageParameters()
     {
+      SystemMessage = "You are a helpful and knowledge administrator of the Onspring platform. Your job is to assist the user to the best of your ability using the knowledge you have about the platform and the tools you have available to you.",
       Messages = messages,
       Model = AnthropicModels.Claude3Haiku,
       MaxTokens = 1024,

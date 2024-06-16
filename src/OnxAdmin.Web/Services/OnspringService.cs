@@ -1,4 +1,7 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
+
+using Tool = Anthropic.SDK.Common.Tool;
 
 namespace OnxAdmin.Web.Services;
 
@@ -22,14 +25,27 @@ class OnspringOptionsSetup(IConfiguration config) : IConfigureOptions<OnspringOp
 
 interface IOnspringService
 {
+  List<Tool> GetTools();
   Task<string> GetCountOfAppsAsync(object? _ = null);
 }
 
-class OnspringService(IOptions<OnspringOptions> options) : IOnspringService
+class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAsyncDisposable
 {
   private readonly OnspringOptions _options = options.Value;
+  private IBrowser? Browser { get; set; }
 
-  public async Task<string> GetCountOfAppsAsync(object? _ = null)
+  public List<Tool> GetTools()
+  {
+    return GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public)
+      .Where(m => m.GetCustomAttribute<FunctionAttribute>() is not null)
+      .Select(m => Tool.GetOrCreateTool(this, m.Name, m.GetCustomAttribute<FunctionAttribute>()!.Description))
+      .ToList();
+  }
+
+  [Function("This function gets the count of apps in an Onspring instance")]
+  public async Task<string> GetCountOfAppsAsync(
+    [FunctionParameter("This is a placeholder parameter. It is not needed to call the function.", false)] object? _ = null
+  )
   {
     var browser = await CreateBrowserAsync();
     var context = await LoginAsync(browser);
@@ -89,21 +105,29 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService
 
     var page = await context.NewPageAsync();
 
-    await page.GotoAsync("/Public/Login");
+    var json = $@"
+    {{
+      ""UserName"": ""{_options.CopilotUsername}"",
+      ""hiddenPassword"": ""{_options.CopilotPassword}""
+    }}
+    ";
 
-    await page
-      .GetByPlaceholder(new Regex("Username", RegexOptions.IgnoreCase))
-      .FillAsync(_options.CopilotUsername);
+    var body = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
 
-    await page
-      .GetByPlaceholder(new Regex("Password", RegexOptions.IgnoreCase))
-      .FillAsync(_options.CopilotPassword);
+    var loginResponse = await page.APIRequest.PostAsync("/Public/Login", new()
+    {
+      Headers = new Dictionary<string, string>
+      {
+        ["Content-Type"] = "application/json",
+      },
+      DataObject = body,
+    });
 
-    await page
-      .GetByText(new Regex("login", RegexOptions.IgnoreCase))
-      .ClickAsync();
+    if (loginResponse.Ok is false)
+    {
+      throw new ToolException("Failed to login");
+    }
 
-    await page.WaitForURLAsync(new Regex("/Dashboard", RegexOptions.IgnoreCase));
     await page.CloseAsync();
 
     return context;
@@ -111,8 +135,25 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService
 
   private async Task<IBrowser> CreateBrowserAsync()
   {
+    if (Browser is not null)
+    {
+      return Browser;
+    }
+
     var playwright = await Playwright.CreateAsync();
     var browser = await playwright.Chromium.LaunchAsync();
+
+    Browser = browser;
+
     return browser;
+  }
+
+
+  public async ValueTask DisposeAsync()
+  {
+    if (Browser is not null)
+    {
+      await Browser.CloseAsync();
+    }
   }
 }
