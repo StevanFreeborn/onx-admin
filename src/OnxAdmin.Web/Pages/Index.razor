@@ -3,7 +3,7 @@
 @inject IJSRuntime JS
 @inject IAnthropicService AnthropicService
 
-<PageTitle>OnxAdmin</PageTitle>
+<PageTitle>OnxAdmin - Anthropic</PageTitle>
 
 <div class="container">
   <div class="messages-container">
@@ -11,7 +11,7 @@
     {
       @foreach (var content in message.Content)
       {
-        if (content is TextContent textContent)
+        if (content is Anthropic.SDK.Messaging.TextContent textContent)
         {
           <div class="message message-@(message.Role.ToString().ToLower())">
             <div class="message-wrapper">

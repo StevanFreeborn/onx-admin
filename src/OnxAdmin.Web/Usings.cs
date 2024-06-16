@@ -17,3 +17,7 @@ global using Microsoft.Extensions.Http.Resilience;
 global using Microsoft.Playwright;
 
 global using Markdig;
+
+global using Microsoft.SemanticKernel;
+global using Microsoft.SemanticKernel.ChatCompletion;
+global using Microsoft.SemanticKernel.Connectors.OpenAI;

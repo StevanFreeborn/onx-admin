@@ -1,5 +1,4 @@
 {
-  "editor.formatOnSave": true,
   "dotnet.defaultSolution": "src/OnxAdmin.sln",
-  "cSpell.words": ["Prerendered"]
+  "cSpell.words": ["Groq", "Mixtral", "Prerendered"]
 }

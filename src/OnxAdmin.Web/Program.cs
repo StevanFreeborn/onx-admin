@@ -1,3 +1,5 @@
+#pragma warning disable SKEXP0010
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -19,6 +21,23 @@ builder.Services.AddHttpClient<IAnthropicService, AnthropicService>();
 
 builder.Services.ConfigureOptions<OnspringOptionsSetup>();
 builder.Services.AddScoped<IOnspringService, OnspringService>();
+
+builder.Services.ConfigureOptions<GroqOptionsSetup>();
+
+builder.Services.AddSingleton<IChatCompletionService>(sp => {
+  var groqOptions = sp.GetRequiredService<IOptions<GroqOptions>>().Value;
+  var openAIChatCompletion = new OpenAIChatCompletionService(
+    modelId: GroqModels.LLaMA38b,
+    endpoint: new Uri(groqOptions.BaseUrl),
+    apiKey: groqOptions.ApiKey
+  );
+  return openAIChatCompletion;
+});
+
+builder.Services.AddTransient(sp =>
+{
+  return new Kernel(sp);
+});
 
 var app = builder.Build();
 
