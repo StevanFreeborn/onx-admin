@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 using Tool = Anthropic.SDK.Common.Tool;
@@ -23,10 +24,18 @@ class OnspringOptionsSetup(IConfiguration config) : IConfigureOptions<OnspringOp
   }
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
+enum FieldType
+{
+  Date,
+  List,
+  Number,
+  Text,
+}
+
 interface IOnspringService
 {
   List<Tool> GetTools();
-  Task<string> GetCountOfAppsAsync(object? _ = null);
 }
 
 class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAsyncDisposable
@@ -42,32 +51,89 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
       .ToList();
   }
 
-  [Function("This function allows the user to create a new app in an Onspring instance.")]
+  [Function("This function allows the user to create a new field in an app in an Onspring instance. It will return the URL of the app where the field was created.")]
+  public async Task<string> CreateFieldAsync(
+    [FunctionParameter("The name of the app where the field should be created create", true)] string appName,
+    [FunctionParameter("The name of the field to create", true)] string name,
+    [FunctionParameter("The type of the field to create", true)] FieldType type,
+    [FunctionParameter("The description of the field to create", false)] string description = ""
+  )
+  {
+    return await PerformActionAsync(async page =>
+    {
+      await page.GotoAsync($"/Admin/App");
+      await page.GetByPlaceholder(new Regex("filter by", RegexOptions.IgnoreCase)).PressSequentiallyAsync(appName, new() { Delay = 150 });
+      await page.WaitForResponseAsync(new Regex("Admin/App/AppsListRead", RegexOptions.IgnoreCase));
+
+      var appRow = page.GetByRole(AriaRole.Row, new() { NameRegex = new Regex(appName, RegexOptions.IgnoreCase) });
+      var isRowVisible = await appRow.IsVisibleAsync();
+
+      if (isRowVisible is false)
+      {
+        throw new ToolException("App not found");
+      }
+
+      await appRow.ClickAsync();
+      await page.WaitForURLAsync(new Regex(@"/Admin/App/\d+", RegexOptions.IgnoreCase));
+      await page.GetByRole(AriaRole.Tab, new() { NameRegex = new("layouts", RegexOptions.IgnoreCase) }).ClickAsync();
+
+      await page.Locator("[data-add-button='layout-item']").ClickAsync();
+
+      var layoutItemMenu = page.Locator("[data-add-menu='layout-item']");
+      await layoutItemMenu.WaitForAsync();
+      await layoutItemMenu.GetByText(new Regex($"{type}", RegexOptions.IgnoreCase)).First.ClickAsync();
+
+      var addFieldDialog = page.GetByRole(AriaRole.Dialog, new() { NameRegex = new($"add.*field", RegexOptions.IgnoreCase) });
+      await addFieldDialog.WaitForAsync();
+      await addFieldDialog.GetByRole(AriaRole.Button, new() { NameRegex = new("continue", RegexOptions.IgnoreCase) }).ClickAsync();
+      await addFieldDialog.WaitForAsync();
+
+      var frame = addFieldDialog.FrameLocator("iframe");
+      await frame.Locator(".label:has-text('Field') + .data input").FillAsync(name);
+      await frame.Locator(".label:has-text('Description') + .data .content-area.mce-content-body").FillAsync(description);
+      await addFieldDialog.GetByRole(AriaRole.Button, new() { NameRegex = new("save", RegexOptions.IgnoreCase) }).ClickAsync();
+
+      var addFieldResponse = await page.WaitForResponseAsync(new Regex(@"/Admin/App/\d+/Field/AddUsingSettings", RegexOptions.IgnoreCase));
+
+      if (addFieldResponse.Ok is false)
+      {
+        throw new ToolException("Failed to create field");
+      }
+
+      var addFieldResponseJson = await addFieldResponse.JsonAsync();
+
+      if (addFieldResponseJson.Value.TryGetProperty("success", out var success) && success.GetBoolean() is false)
+      {
+        var errors = addFieldResponseJson.Value.GetProperty("errors").EnumerateArray().Select(e => e.GetProperty("message").GetString()).ToList();
+        var message = string.Join(Environment.NewLine, errors);
+        throw new ToolException(message);
+      }
+
+      return page.Url;
+    });
+  }
+
+  [Function("This function allows the user to create a new app in an Onspring instance. It will return the URL of the app that was created.")]
   public async Task<string> CreateAppAsync(
     [FunctionParameter("The name of the app to create", true)] string name
   )
   {
-    var browser = await CreateBrowserAsync();
-    var context = await LoginAsync(browser);
-
-    var page = await context.NewPageAsync();
-
-    try
+    return await PerformActionAsync(async page =>
     {
       var addAppJson = $@"{{
-      ""Id"": 0,
-      ""Name"": ""{name}"",
-      ""AppStatus"": ""Enabled"",
-      ""Description"": """",
-      ""GlobalImageId"": """",
-      ""ImageId"": """",
-      ""ContentVersioning"": ""Enabled"",
-      ""SaveDirectUserVersions"": true,
-      ""SaveIndirectUserVersions"": false,
-      ""SaveApiVersions"": false,
-      ""SaveSystemVersions"": false,
-      ""DisplayConcurrentEditingAlert"": true
-    }}";
+        ""Id"": 0,
+        ""Name"": ""{name}"",
+        ""AppStatus"": ""Enabled"",
+        ""Description"": """",
+        ""GlobalImageId"": """",
+        ""ImageId"": """",
+        ""ContentVersioning"": ""Enabled"",
+        ""SaveDirectUserVersions"": true,
+        ""SaveIndirectUserVersions"": false,
+        ""SaveApiVersions"": false,
+        ""SaveSystemVersions"": false,
+        ""DisplayConcurrentEditingAlert"": true
+      }}";
 
       var appAppBody = JsonSerializer.Deserialize<Dictionary<string, object>>(addAppJson);
 
@@ -95,22 +161,22 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
       }
 
       var getAppListJson = $@"{{
-      ""filter"": ""{name}"",
-      ""hideReadOnly"": false,
-      ""pageSize"": 50,
-      ""requestedPage"": 1,
-      ""sorting"": [
-        {{
-          ""columnId"": ""a1"",
-          ""sortDirection"": ""0""
+        ""filter"": ""{name}"",
+        ""hideReadOnly"": false,
+        ""pageSize"": 50,
+        ""requestedPage"": 1,
+        ""sorting"": [
+          {{
+            ""columnId"": ""a1"",
+            ""sortDirection"": ""0""
+          }}
+        ],
+        ""addlFilterConfigs"": {{
+          ""gridFilterConfigs"": [],
+          ""dashboardFilterConfigs"": [],
+          ""addlFilterConfigs"": []
         }}
-      ],
-      ""addlFilterConfigs"": {{
-        ""gridFilterConfigs"": [],
-        ""dashboardFilterConfigs"": [],
-        ""addlFilterConfigs"": []
-      }}
-    }}";
+      }}";
 
       var getAppListBody = JsonSerializer.Deserialize<Dictionary<string, object>>(getAppListJson);
 
@@ -153,44 +219,33 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
 
       await page.GotoAsync($"/Admin/App/{appId}");
       return page.Url;
-    }
-    finally
-    {
-      await page.CloseAsync();
-      await context.CloseAsync();
-    }
-
+    });
   }
 
-  [Function("This function gets the count of apps in an Onspring instance")]
+  [Function("This function gets the count of apps in an Onspring instance. It will return the number of apps in the instance.")]
   public async Task<string> GetCountOfAppsAsync(
     [FunctionParameter("This is a placeholder parameter. It is not needed to call the function.", false)] object? _ = null
   )
   {
-    var browser = await CreateBrowserAsync();
-    var context = await LoginAsync(browser);
-
-    var page = await context.NewPageAsync();
-
-    try
+    return await PerformActionAsync(async page =>
     {
       var json = @"{
-      ""filter"": """",
-      ""hideReadOnly"": false,
-      ""pageSize"": 1,
-      ""requestedPage"": 1,
-      ""sorting"": [
-        {
-          ""columnId"": ""a1"",
-          ""sortDirection"": ""0""
+        ""filter"": """",
+        ""hideReadOnly"": false,
+        ""pageSize"": 1,
+        ""requestedPage"": 1,
+        ""sorting"": [
+          {
+            ""columnId"": ""a1"",
+            ""sortDirection"": ""0""
+          }
+        ],
+        ""addlFilterConfigs"": {
+          ""gridFilterConfigs"": [],
+          ""dashboardFilterConfigs"": [],
+          ""addlFilterConfigs"": []
         }
-      ],
-      ""addlFilterConfigs"": {
-        ""gridFilterConfigs"": [],
-        ""dashboardFilterConfigs"": [],
-        ""addlFilterConfigs"": []
-      }
-    }";
+      }";
 
       var body = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
 
@@ -217,6 +272,19 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
       }
 
       return total.ToString();
+    });
+  }
+
+  private async Task<T> PerformActionAsync<T>(Func<IPage, Task<T>> action)
+  {
+    var browser = await CreateBrowserAsync();
+    var context = await LoginAsync(browser);
+
+    var page = await context.NewPageAsync();
+
+    try
+    {
+      return await action(page);
     }
     finally
     {
@@ -270,10 +338,7 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
     }
 
     var playwright = await Playwright.CreateAsync();
-    var browser = await playwright.Chromium.LaunchAsync(new()
-    {
-      Headless = false,
-    });
+    var browser = await playwright.Chromium.LaunchAsync();
 
     Browser = browser;
 

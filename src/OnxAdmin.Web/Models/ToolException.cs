@@ -1,5 +1,5 @@
 namespace OnxAdmin.Web.Models;
 
-public class ToolException(string message) : Exception(message)
+class ToolException(string message) : Exception(message)
 {
 }

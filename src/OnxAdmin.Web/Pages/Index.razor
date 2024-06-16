@@ -3,6 +3,8 @@
 @inject IJSRuntime JS
 @inject IAnthropicService AnthropicService
 
+<PageTitle>OnxAdmin</PageTitle>
+
 <div class="container">
   <div class="messages-container">
     @foreach (var message in _messages)
@@ -12,7 +14,9 @@
         if (content is TextContent textContent)
         {
           <div class="message message-@(message.Role.ToString().ToLower())">
-            @((MarkupString)Markdown.ToHtml(textContent.Text, _pipeline))
+            <div class="message-wrapper">
+              @((MarkupString)Markdown.ToHtml(textContent.Text, _pipeline))
+            </div>
           </div>
         }
         if (content is ToolUseContent toolUseContent)
@@ -57,7 +61,8 @@
   <div class="input-container">
     <div class="prompt-wrapper">
       <textarea name="prompt" id="prompt" placeholder="Message OnxAdmin" @oninput="HandlePromptInput"
-        @onfocus="HandlePromptFocus" @onblur="HandlePromptBlur" rows="1" dir="auto" value="@_prompt"></textarea>
+        @onfocus="HandlePromptFocus" @onblur="HandlePromptBlur" @onkeydown="HandlePromptKeydown" rows="1" dir="auto"
+        value="@_prompt"></textarea>
       <button type="button" class="send-button" @onclick="HandleSendButtonClick">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
           <path
@@ -76,7 +81,12 @@
   private bool _isRunning = false;
   private readonly List<Message> _messages = new List<Message>();
   private IJSObjectReference? Module;
-  private readonly MarkdownPipeline _pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+  private readonly MarkdownPipeline _pipeline = new MarkdownPipelineBuilder()
+  .UseAdvancedExtensions()
+  .UseAutoLinks(new() { OpenInNewWindow = true, UseHttpsForWWWLinks = true })
+  .UseEmojiAndSmiley()
+  .UseSoftlineBreakAsHardlineBreak()
+  .Build();
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
   {
@@ -124,6 +134,14 @@
     if (Module is not null)
     {
       await Module.InvokeVoidAsync("resizePrompt");
+    }
+  }
+
+  private async Task HandlePromptKeydown(KeyboardEventArgs e)
+  {
+    if (e.Key == "Enter" && e.CtrlKey)
+    {
+      await HandleSendButtonClick();
     }
   }
 
