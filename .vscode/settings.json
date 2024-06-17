@@ -1,4 +1,9 @@
 {
   "dotnet.defaultSolution": "src/OnxAdmin.sln",
-  "cSpell.words": ["Groq", "Mixtral", "Prerendered"]
+  "cSpell.words": [
+    "Groq",
+    "Markdig",
+    "Mixtral",
+    "Prerendered"
+  ]
 }
