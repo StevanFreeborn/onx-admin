@@ -1,4 +1,5 @@
 @page "/chat"
+@using Azure.AI.OpenAI
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject Kernel Kernel
@@ -9,14 +10,36 @@
   <div class="messages-container">
     @foreach (var message in _messages)
     {
-      if (message.Content is not null)
-      {
         <div class="message message-@(message.Role.ToString().ToLower())">
           <div class="message-wrapper">
-            @((MarkupString)Markdown.ToHtml(message.Content, _pipeline))
+            @if (message.Role == AuthorRole.User && string.IsNullOrWhiteSpace(message.Content) is false)
+            {
+              @((MarkupString)Markdown.ToHtml(message.Content, _pipeline))
+            }
+            @if (message.Role == AuthorRole.Assistant && string.IsNullOrWhiteSpace(message.Content) is false)
+            {
+              @((MarkupString)Markdown.ToHtml(message.Content, _pipeline))
+            }
+            @if (message.Role == AuthorRole.Assistant && message.Metadata is not null)
+            {
+              var metadata = message.Metadata.Values.OfType<List<ChatCompletionsFunctionToolCall>>().FirstOrDefault();
+              
+              if (metadata is not null)
+              {
+                @foreach(var item in metadata)
+                {
+                  <div class="tool-use">@item.Name</div>
+                }
+              }
+            }
+            @if (message.Role == AuthorRole.Tool && string.IsNullOrWhiteSpace(message.Content) is false)
+            {
+              <div class="tool-result">
+                @((MarkupString)Markdown.ToHtml(message.Content, _pipeline))
+              </div>
+            }
           </div>
         </div>
-      }
     }
     @if (string.IsNullOrWhiteSpace(_assistantResponse) is false)
     {
@@ -60,6 +83,7 @@
   private readonly OpenAIPromptExecutionSettings _promptExecSettings = new()
   {
     ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+    ChatSystemPrompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. DO NOT make up functions or tools.",
   };
 
   private readonly MarkdownPipeline _pipeline = new MarkdownPipelineBuilder()
@@ -180,12 +204,10 @@
 
     ChatMessageContent? messageContent = null;
 
-    // TODO: This is message. Need to centralize the updating of the
-    // state and calling state has changed and scrolling to bottom
     await foreach (var content in response)
     {
       if (content.Role.HasValue)
-      {
+      {        
         messageContent = new(
           content.Role ?? AuthorRole.Assistant,
           content.Content,
@@ -196,13 +218,14 @@
         );
       }
 
+      _assistantResponse += content.Content;
+      StateHasChanged();
+
       if (messageContent is null)
       {
         continue;
       }
 
-      _assistantResponse += content.Content;
-      StateHasChanged();
       messageContent.Content += content.Content;
     }
 

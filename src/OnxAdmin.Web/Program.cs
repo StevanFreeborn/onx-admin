@@ -1,4 +1,4 @@
-#pragma warning disable SKEXP0010
+#pragma warning disable SKEXP0010, SKEXP0050
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
@@ -27,7 +27,7 @@ builder.Services.ConfigureOptions<GroqOptionsSetup>();
 builder.Services.AddSingleton<IChatCompletionService>(sp => {
   var groqOptions = sp.GetRequiredService<IOptions<GroqOptions>>().Value;
   var openAIChatCompletion = new OpenAIChatCompletionService(
-    modelId: GroqModels.LLaMA38b,
+    modelId: GroqModels.LLaMA370b,
     endpoint: new Uri(groqOptions.BaseUrl),
     apiKey: groqOptions.ApiKey
   );
@@ -36,7 +36,8 @@ builder.Services.AddSingleton<IChatCompletionService>(sp => {
 
 builder.Services.AddTransient(sp =>
 {
-  return new Kernel(sp);
+  var kernel = new Kernel(sp);
+  return kernel;
 });
 
 var app = builder.Build();

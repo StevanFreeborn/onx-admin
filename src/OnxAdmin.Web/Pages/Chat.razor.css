@@ -47,7 +47,8 @@
       }
     }
 
-    &.message-assistant {
+    &.message-assistant,
+    &.message-tool {
       align-items: flex-start;
 
       & .tool-use {
