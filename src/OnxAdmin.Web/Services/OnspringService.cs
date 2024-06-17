@@ -63,7 +63,7 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
     {
       await page.GotoAsync($"/Admin/App");
       await page.GetByPlaceholder(new Regex("filter by", RegexOptions.IgnoreCase)).PressSequentiallyAsync(appName, new() { Delay = 150 });
-      await page.WaitForResponseAsync(new Regex("Admin/App/AppsListRead", RegexOptions.IgnoreCase));
+      await page.WaitForResponseAsync(new Regex("/Admin/App/AppsListRead", RegexOptions.IgnoreCase));
 
       var appRow = page.GetByRole(AriaRole.Row, new() { NameRegex = new Regex(appName, RegexOptions.IgnoreCase) });
       var isRowVisible = await appRow.IsVisibleAsync();
@@ -263,8 +263,8 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
         throw new ToolException("Failed to get count of apps");
       }
 
-      var count = await response.JsonAsync();
-      var totalProperty = count.Value.GetProperty("totalCount");
+      var responseBody = await response.JsonAsync();
+      var totalProperty = responseBody.Value.GetProperty("totalCount");
 
       if (totalProperty.TryGetInt64(out var total) is false)
       {
@@ -302,32 +302,41 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
 
     var page = await context.NewPageAsync();
 
-    var json = $@"
-    {{
-      ""UserName"": ""{_options.CopilotUsername}"",
-      ""hiddenPassword"": ""{_options.CopilotPassword}""
-    }}
-    ";
-
-    var body = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-
-    var loginResponse = await page.APIRequest.PostAsync("/Public/Login", new()
+    try
     {
-      Headers = new Dictionary<string, string>
+      var json = $@"{{
+        ""UserName"": ""{_options.CopilotUsername}"",
+        ""hiddenPassword"": ""{_options.CopilotPassword}""
+      }}
+      ";
+
+      var body = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+
+      var loginResponse = await page.APIRequest.PostAsync("/Public/Login", new()
       {
-        ["Content-Type"] = "application/json",
-      },
-      DataObject = body,
-    });
+        Headers = new Dictionary<string, string>
+        {
+          ["Content-Type"] = "application/json",
+        },
+        DataObject = body,
+      });
 
-    if (loginResponse.Ok is false)
-    {
-      throw new ToolException("Failed to login");
+      var text = await loginResponse.TextAsync();
+      await page.SetContentAsync(text);
+      var title = await page.TitleAsync();
+
+      if (new Regex("login", RegexOptions.IgnoreCase).IsMatch(title))
+      {
+        throw new ToolException("Failed to login");
+      }
+
+      return context;
     }
-
-    await page.CloseAsync();
-
-    return context;
+    finally
+    {
+      await page.CloseAsync();
+    }
+    
   }
 
   private async Task<IBrowser> CreateBrowserAsync()
@@ -337,8 +346,8 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
       return Browser;
     }
 
-    using var playwright = await Playwright.CreateAsync();
-    var browser = await playwright.Chromium.LaunchAsync();
+    var playwright = await Playwright.CreateAsync();
+    var browser = await playwright.Chromium.LaunchAsync(new() { Headless = false });
 
     Browser = browser;
 
