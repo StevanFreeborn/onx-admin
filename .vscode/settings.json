@@ -1,5 +1,11 @@
 {
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": false,
   "dotnet.defaultSolution": "src/OnxAdmin.sln",
-  "cSpell.words": ["Prerendered"]
+  "cSpell.words": [
+    "Blazor",
+    "Chunker",
+    "nomic",
+    "Ollama",
+    "Prerendered"
+  ]
 }

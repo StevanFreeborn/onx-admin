@@ -1,6 +1,6 @@
-using System.Reflection;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
+#pragma warning disable SKEXP0001
+
+using System.Text;
 
 using Tool = Anthropic.SDK.Common.Tool;
 
@@ -36,11 +36,14 @@ enum FieldType
 interface IOnspringService
 {
   List<Tool> GetTools();
+  Task<List<HelpCenterDocument>> GetHelpCenterDocumentsAsync();
 }
 
-class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAsyncDisposable
+class OnspringService(IOptions<OnspringOptions> options, ISemanticTextMemory memory, ILogger<OnspringService> logger) : IOnspringService, IDisposable, IAsyncDisposable
 {
   private readonly OnspringOptions _options = options.Value;
+  private readonly ISemanticTextMemory _memory = memory;
+  private readonly ILogger<OnspringService> _logger = logger;
   private IBrowser? Browser { get; set; }
 
   public List<Tool> GetTools()
@@ -53,10 +56,14 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
 
   [Function("This function allows the user to create a new field in an app in an Onspring instance. It will return the URL of the app where the field was created.")]
   public async Task<string> CreateFieldAsync(
-    [FunctionParameter("The name of the app where the field should be created create", true)] string appName,
-    [FunctionParameter("The name of the field to create", true)] string name,
-    [FunctionParameter("The type of the field to create", true)] FieldType type,
-    [FunctionParameter("The description of the field to create", false)] string description = ""
+    [FunctionParameter("The name of the app where the field should be created create", true)] 
+    string appName,
+    [FunctionParameter("The name of the field to create", true)] 
+    string name,
+    [FunctionParameter("The type of the field to create", true)] 
+    FieldType type,
+    [FunctionParameter("The description of the field to create", false)] 
+    string description = ""
   )
   {
     return await PerformActionAsync(async page =>
@@ -115,7 +122,8 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
 
   [Function("This function allows the user to create a new app in an Onspring instance. It will return the URL of the app that was created.")]
   public async Task<string> CreateAppAsync(
-    [FunctionParameter("The name of the app to create", true)] string name
+    [FunctionParameter("The name of the app to create", true)] 
+    string name
   )
   {
     return await PerformActionAsync(async page =>
@@ -224,7 +232,8 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
 
   [Function("This function gets the count of apps in an Onspring instance. It will return the number of apps in the instance.")]
   public async Task<string> GetCountOfAppsAsync(
-    [FunctionParameter("This is a placeholder parameter. It is not needed to call the function.", false)] object? _ = null
+    [FunctionParameter("This is a placeholder parameter. It is not needed to call the function.", false)] 
+    object? _ = null
   )
   {
     return await PerformActionAsync(async page =>
@@ -272,6 +281,114 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
       }
 
       return total.ToString();
+    });
+  }
+
+  [Function("This function can be used to query the help center documents in an Onspring instance. It will return the documents that match the query. The documents can be used to help answer questions.")]
+  public async Task<string> QueryHelpCenterDocuments(
+    [FunctionParameter("The query to search for in the help center documents", true)]
+    string query
+  )
+  {
+    try
+    {
+      var results = _memory.SearchAsync(
+        collection: HelpCenterGenerateEmbeddingsService.HelpCenterCollection,
+        query: $"search_query: {query}",
+        limit: 10,
+        minRelevanceScore: 0
+      );
+
+      var knowledge = new StringBuilder();
+
+      await foreach (var result in results)
+      {
+        knowledge.AppendLine(result.Metadata.Text);
+      }
+
+      return knowledge.ToString();
+    }
+    catch (Exception ex)
+    {
+      throw new ToolException("Failed to query help center documents", ex);
+    }
+    
+  }
+
+  public async Task<List<HelpCenterDocument>> GetHelpCenterDocumentsAsync()
+  {
+    return await PerformActionAsync(async page =>
+    {
+      await page.GotoAsync("/Help/Content/Home.htm", new() { WaitUntil = WaitUntilState.NetworkIdle });
+
+      var navItems = page.Locator(".sidenav li.tree-node:not(.tree-node-leaf)");
+
+      for (var i = 0; i < await navItems.CountAsync(); i++)
+      {
+        var navItem = navItems.Nth(i);
+        var toggle = navItem.Locator(".submenu-toggle-container");
+        var ariaExpanded = await toggle.GetAttributeAsync("aria-expanded");
+        var isExpanded = ariaExpanded == "true";
+
+        if (isExpanded)
+        {
+          continue;
+        }
+
+        await navItem.ClickAsync();
+      }
+
+      var navLinks = page.Locator(".sidenav a");
+      var linkAddresses = new List<string>();
+
+      foreach (var navLink in await navLinks.AllAsync())
+      {
+        var href = await navLink.GetAttributeAsync("href");
+
+        if (href is null || href.Contains("javascript:void(0)"))
+        {
+          continue;
+        }
+
+        linkAddresses.Add(href);
+      }
+
+      var linkAbsoluteAddresses = linkAddresses.Select(link => link.Replace("..", "/Help")).ToList();
+
+      var documents = new List<HelpCenterDocument>();
+
+      foreach (var link in linkAbsoluteAddresses)
+      {
+        try
+        {
+          await page.GotoAsync(link, new() { WaitUntil = WaitUntilState.NetworkIdle });
+
+          var main = page.Locator("#mc-main-content");
+          var content = await main.InnerTextAsync();
+
+          if (string.IsNullOrWhiteSpace(content))
+          {
+            continue;
+          }
+
+          var cleanedContent = Regex.Replace(content, @"^\s*$\n|\r", "", RegexOptions.Multiline);
+          var pageUrl = new Uri(page.Url);
+          var path = pageUrl.AbsolutePath;
+          var documentTitle = path.Replace("/", "_").TrimStart('_').Replace(".htm", string.Empty);
+
+          documents.Add(new()
+          {
+            Title = documentTitle,
+            Content = cleanedContent,
+          });
+        }
+        catch (Exception ex)
+        {
+          _logger.LogError(ex, "Failed to get document content");
+        }
+      }
+
+      return documents;
     });
   }
 
@@ -336,7 +453,7 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
     {
       await page.CloseAsync();
     }
-    
+
   }
 
   private async Task<IBrowser> CreateBrowserAsync()
@@ -360,6 +477,14 @@ class OnspringService(IOptions<OnspringOptions> options) : IOnspringService, IAs
     if (Browser is not null)
     {
       await Browser.CloseAsync();
+    }
+  }
+
+  public void Dispose()
+  {
+    if (Browser is not null)
+    {
+      Browser.CloseAsync().GetAwaiter().GetResult();
     }
   }
 }

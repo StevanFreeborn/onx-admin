@@ -1,3 +1,5 @@
+#pragma warning disable SKEXP0001, SKEXP0020
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -19,6 +21,34 @@ builder.Services.AddHttpClient<IAnthropicService, AnthropicService>();
 
 builder.Services.ConfigureOptions<OnspringOptionsSetup>();
 builder.Services.AddScoped<IOnspringService, OnspringService>();
+
+builder.Services.ConfigureOptions<ChromaOptionsSetup>();
+
+builder.Services.AddTransient<IMemoryStore>(sp =>
+{
+  var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
+  var options = sp.GetRequiredService<IOptions<ChromaOptions>>().Value;
+  var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+  return new ChromaMemoryStore(httpClient, options.BaseUrl, loggerFactory);
+});
+
+builder.Services.ConfigureOptions<OllamaTextEmbeddingOptionsSetup>();
+builder.Services.AddTransient<ITextEmbeddingGenerationService, OllamaTextEmbeddingGeneration>(sp =>
+{
+  var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
+  var options = sp.GetRequiredService<IOptions<OllamaTextEmbeddingOptions>>().Value;
+  var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+  return new OllamaTextEmbeddingGeneration(options.ModelId, options.BaseUrl, httpClient, loggerFactory);
+});
+
+builder.Services.AddTransient<ISemanticTextMemory, SemanticTextMemory>();
+
+var generateEmbeddings = builder.Configuration.GetValue("GenerateEmbeddings", false);
+
+if (generateEmbeddings)
+{
+  builder.Services.AddHostedService<HelpCenterGenerateEmbeddingsService>();
+}
 
 var app = builder.Build();
 

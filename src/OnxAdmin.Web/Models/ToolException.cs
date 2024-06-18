@@ -1,5 +1,12 @@
 namespace OnxAdmin.Web.Models;
 
-class ToolException(string message) : Exception(message)
+class ToolException : Exception
 {
+  public ToolException(string message) : base(message)
+  {
+  }
+
+  public ToolException(string message, Exception innerException) : base(message, innerException)
+  {
+  }
 }
