@@ -37,7 +37,11 @@ interface IOnspringService
   Task<List<HelpCenterDocument>> GetHelpCenterDocumentsAsync();
 }
 
-class OnspringService(IOptions<OnspringOptions> options, ISemanticTextMemory memory, ILogger<OnspringService> logger) : IOnspringService, IDisposable, IAsyncDisposable
+class OnspringService(
+  IOptions<OnspringOptions> options, 
+  ISemanticTextMemory memory, 
+  ILogger<OnspringService> logger
+) : IOnspringService, IAsyncDisposable
 {
   private readonly OnspringOptions _options = options.Value;
   private readonly ISemanticTextMemory _memory = memory;
@@ -70,7 +74,7 @@ class OnspringService(IOptions<OnspringOptions> options, ISemanticTextMemory mem
       await page.GetByPlaceholder(new Regex("filter by", RegexOptions.IgnoreCase)).PressSequentiallyAsync(appName, new() { Delay = 150 });
       await page.WaitForResponseAsync(new Regex("/Admin/App/AppsListRead", RegexOptions.IgnoreCase));
 
-      var appRow = page.GetByRole(AriaRole.Row, new() { NameRegex = new Regex(appName, RegexOptions.IgnoreCase) });
+      var appRow = page.GetByRole(AriaRole.Row, new() { NameRegex = new Regex(appName, RegexOptions.IgnoreCase), Exact = true }).First;
       var isRowVisible = await appRow.IsVisibleAsync();
 
       if (isRowVisible is false)
@@ -356,6 +360,7 @@ class OnspringService(IOptions<OnspringOptions> options, ISemanticTextMemory mem
 
       var documents = new List<HelpCenterDocument>();
 
+      // TODO: Retry links that timeout
       foreach (var link in linkAbsoluteAddresses)
       {
         try
@@ -383,7 +388,7 @@ class OnspringService(IOptions<OnspringOptions> options, ISemanticTextMemory mem
         }
         catch (Exception ex)
         {
-          _logger.LogError(ex, "Failed to get document content");
+          _logger.LogError(ex, "Failed to get document content: {Link}", link);
         }
       }
 
@@ -401,6 +406,11 @@ class OnspringService(IOptions<OnspringOptions> options, ISemanticTextMemory mem
     try
     {
       return await action(page);
+    }
+    catch (Exception ex)
+    {
+      var actionName = action.Method.Name;
+      throw new ToolException($"Unable to perform action: {actionName} due to {ex.Message}", ex);
     }
     finally
     {
@@ -476,14 +486,6 @@ class OnspringService(IOptions<OnspringOptions> options, ISemanticTextMemory mem
     if (Browser is not null)
     {
       await Browser.CloseAsync();
-    }
-  }
-
-  public void Dispose()
-  {
-    if (Browser is not null)
-    {
-      Browser.CloseAsync().GetAwaiter().GetResult();
     }
   }
 }

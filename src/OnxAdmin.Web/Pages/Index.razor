@@ -54,12 +54,36 @@
     }
   </div>
   <div class="input-container">
+    <div class="attachment-wrapper">
+      @foreach (var file in _files)
+      {
+        <div class="attachment">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor">
+            <path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128z"/>
+          </svg>
+          <p title="@file.Name">@file.Name</p>
+          <button type="button" @onclick="@(() => _files.Remove(file))">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
+              <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/>
+            </svg>
+            <span class="sr-only">Remove Attachment</span>
+          </button>
+        </div>
+      }
+    </div>
     <div class="prompt-wrapper">
-      <InputFile OnChange="LoadFiles" style="display: none;" id="fileInput" />
-      <button type="button" @onclick="OpenFileInput">Choose File</button>
+      <label for="fileInput" class="sr-only">File Input</label>
+      <InputFile multiple OnChange="LoadFiles" style="display: none;" id="fileInput" name="fileInput" />
+      <button class="attach-file-button" type="button" @onclick="OpenFileInput">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor">
+          <path d="M364.2 83.8c-24.4-24.4-64-24.4-88.4 0l-184 184c-42.1 42.1-42.1 110.3 0 152.4s110.3 42.1 152.4 0l152-152c10.9-10.9 28.7-10.9 39.6 0s10.9 28.7 0 39.6l-152 152c-64 64-167.6 64-231.6 0s-64-167.6 0-231.6l184-184c46.3-46.3 121.3-46.3 167.6 0s46.3 121.3 0 167.6l-176 176c-28.6 28.6-75 28.6-103.6 0s-28.6-75 0-103.6l144-144c10.9-10.9 28.7-10.9 39.6 0s10.9 28.7 0 39.6l-144 144c-6.7 6.7-6.7 17.7 0 24.4s17.7 6.7 24.4 0l176-176c24.4-24.4 24.4-64 0-88.4z"/>
+        </svg>
+        <span class="sr-only">Attach File</span>
+      </button>
+      <label for="prompt" class="sr-only">Prompt</label>
       <textarea 
         name="prompt" 
-        id="prompt" 
+        id="prompt"
         placeholder="Message OnxAdmin" 
         @oninput="HandlePromptInput"
         @onfocus="HandlePromptFocus" 
@@ -93,6 +117,7 @@
   private string _assistantResponse { get; set; } = string.Empty;
   private bool _isRunning = false;
   private readonly List<Message> _messages = new List<Message>();
+  private readonly List<IBrowserFile> _files = new List<IBrowserFile>();
   private IJSObjectReference? Module;
   private readonly MarkdownPipeline _pipeline = new MarkdownPipelineBuilder()
     .UseAdvancedExtensions()
@@ -106,6 +131,7 @@
     if (firstRender)
     {
       Module = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Index.razor.js");
+      await Module.InvokeVoidAsync("initialize");
     }
   }
 
@@ -138,7 +164,7 @@
 
     foreach (var file in files)
     {
-      Console.WriteLine($"File: {file.Name}, Size: {file.Size} bytes");
+      _files.Add(file);
     }
   }
 

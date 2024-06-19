@@ -144,9 +144,20 @@ class AnthropicService(
       Temperature = 0m,
     };
 
-    var response = await _client.Messages.GetClaudeMessageAsync(msgParams, [.. tools]);
-
-    return response;
+    try 
+    {
+      var response = await _client.Messages.GetClaudeMessageAsync(msgParams, [.. tools]);
+      return response;
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Failed to generate response: {ExceptionMessage}", ex.Message);
+      return new MessageResponse()
+      {
+        Role = RoleType.Assistant,
+        Content = [new TextContent() { Text = "I'm sorry, I'm having trouble generating a response right now." }],
+      };
+    }
   }
 
   private async Task<string> QueryOnspringKnowledgeAsync(string query)

@@ -1,6 +1,29 @@
-export function resizePrompt() {
-  const prompt = document.getElementById("prompt");
+const PROMPT_ID = "prompt";
 
+export function initialize() {
+  setupPromptObserver();
+}
+
+function getPrompt() {
+  return document.getElementById(PROMPT_ID);
+}
+
+function setupPromptObserver() {
+  const resizeObserver = new ResizeObserver(entries => {
+    for (const entry of entries) {
+      if (entry.target.id === PROMPT_ID) {
+        resizePrompt();
+      }
+    }
+  });
+  
+  const prompt = getPrompt();
+  resizeObserver.observe(prompt);
+}
+
+export function resizePrompt() {
+  const prompt = getPrompt();
+  
   if (prompt === null) {
     return;
   }
@@ -8,7 +31,7 @@ export function resizePrompt() {
   prompt.style.height = "auto";
 
   const scrollHeight = prompt.scrollHeight;
-
+  
   if (scrollHeight > 300) {
     prompt.style.height = "300px";
     prompt.style.overflow = "auto";
@@ -20,7 +43,7 @@ export function resizePrompt() {
 }
 
 export function focusPrompt() {
-  const prompt = document.getElementById("prompt");
+  const prompt = getPrompt();
 
   if (prompt === null) {
     return;
@@ -30,7 +53,7 @@ export function focusPrompt() {
 }
 
 export function blurPrompt() {
-  const prompt = document.getElementById("prompt");
+  const prompt = getPrompt();
 
   if (prompt === null) {
     return;
@@ -40,7 +63,6 @@ export function blurPrompt() {
 }
 
 export function scrollToBottom() {
-  console.log("scrollToBottom");
   const msgContainer = document.querySelector(".messages-container");
 
   if (msgContainer === null) {
@@ -50,8 +72,9 @@ export function scrollToBottom() {
   msgContainer.scrollTop = msgContainer.scrollHeight;
 }
 
+// TODO: I don't think I need this anymore.
 export function resetPrompt() {
-  const prompt = document.getElementById("prompt");
+  const prompt = getPrompt();
 
   if (prompt === null) {
     return;
