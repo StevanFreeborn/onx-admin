@@ -60,3 +60,13 @@ export function resetPrompt() {
   prompt.style.height = "1.5rem";
   prompt.style.overflow = "hidden";
 }
+
+export function openFileInput() {
+  const fileInput = document.getElementById("fileInput");
+  
+  if (fileInput === null) {
+    return;
+  }
+
+  fileInput.click();
+}
