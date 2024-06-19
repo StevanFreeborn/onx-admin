@@ -1,0 +1,32 @@
+@namespace OnxAdmin.Web.Components
+
+@if (Weather == null)
+{
+  <p><em>Loading...</em></p>
+}
+else
+{
+  <div class="widget">
+    <div class="left-panel panel">
+      <div class="date">
+        @Weather.Date.ToShortDateString()
+      </div>
+      <div class="city">
+        @Weather.City
+      </div>
+      <div class="temp">
+          <img src="https://codefrog.space/cp/wp/ts.png" alt="" width="60">
+          <p>@Weather.TemperatureC&deg;</p>
+      </div>
+    </div>
+    <div class="right-panel panel">
+      <img src="https://codefrog.space/cp/wp/mumbai.png" alt="" width="160">
+    </div>
+  </div>
+}
+
+@code 
+{
+  [Parameter]
+  public WeatherForecast? Weather { get; set; }
+}

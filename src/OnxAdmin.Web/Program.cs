@@ -61,6 +61,8 @@ builder.Services.AddTransient<ISemanticTextMemory, SemanticTextMemory>();
 
 builder.Services.AddScoped<IFileSystem, FileSystem>();
 
+builder.Services.AddScoped<IWeatherService, WeatherService>();
+
 var generateEmbeddings = builder.Configuration.GetValue("GenerateEmbeddings", false);
 
 if (generateEmbeddings)

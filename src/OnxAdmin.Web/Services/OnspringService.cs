@@ -31,9 +31,8 @@ enum FieldType
   Text,
 }
 
-interface IOnspringService
+interface IOnspringService : IToolProvider
 {
-  List<Tool> GetTools();
   Task<List<HelpCenterDocument>> GetHelpCenterDocumentsAsync();
 }
 
@@ -41,20 +40,12 @@ class OnspringService(
   IOptions<OnspringOptions> options, 
   ISemanticTextMemory memory, 
   ILogger<OnspringService> logger
-) : IOnspringService, IAsyncDisposable
+) : ToolProvider, IOnspringService, IAsyncDisposable
 {
   private readonly OnspringOptions _options = options.Value;
   private readonly ISemanticTextMemory _memory = memory;
   private readonly ILogger<OnspringService> _logger = logger;
   private IBrowser? Browser { get; set; }
-
-  public List<Tool> GetTools()
-  {
-    return GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public)
-      .Where(m => m.GetCustomAttribute<FunctionAttribute>() is not null)
-      .Select(m => Tool.GetOrCreateTool(this, m.Name, m.GetCustomAttribute<FunctionAttribute>()!.Description))
-      .ToList();
-  }
 
   [Function("This function allows the user to create a new field in an app in an Onspring instance. It will return the URL of the app where the field was created.")]
   public async Task<string> CreateFieldAsync(

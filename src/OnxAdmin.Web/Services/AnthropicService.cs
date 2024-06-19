@@ -31,7 +31,8 @@ class AnthropicService(
   IOptions<AnthropicOptions> options, 
   IOnspringService onspringService,
   ILogger<AnthropicService> logger,
-  ISemanticTextMemory memory
+  ISemanticTextMemory memory,
+  IWeatherService weatherService
 ) : IAnthropicService
 {
   private readonly JsonSerializerOptions _serializerOptions = new() { PropertyNameCaseInsensitive = true };
@@ -39,6 +40,7 @@ class AnthropicService(
   private readonly IOnspringService _onspringService = onspringService;
   private readonly ILogger<AnthropicService> _logger = logger;
   private readonly ISemanticTextMemory _memory = memory;
+  private readonly IWeatherService _weatherService = weatherService;
 
   public async IAsyncEnumerable<string> StreamResponseAsync(List<Message> messages)
   {
@@ -113,6 +115,7 @@ class AnthropicService(
 
     var tools = new List<Tool>();
     tools.AddRange(_onspringService.GetTools());
+    tools.AddRange(_weatherService.GetTools());
 
     var msgParams = new MessageParameters()
     {
