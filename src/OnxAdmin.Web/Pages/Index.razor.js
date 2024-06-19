@@ -72,7 +72,6 @@ export function scrollToBottom() {
   msgContainer.scrollTop = msgContainer.scrollHeight;
 }
 
-// TODO: I don't think I need this anymore.
 export function resetPrompt() {
   const prompt = getPrompt();
 
