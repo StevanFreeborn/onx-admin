@@ -1,7 +1,5 @@
 #pragma warning disable SKEXP0001
 
-using System.Text;
-
 using Tool = Anthropic.SDK.Common.Tool;
 
 namespace OnxAdmin.Web.Services;
@@ -303,7 +301,8 @@ class OnspringService(IOptions<OnspringOptions> options, ISemanticTextMemory mem
 
       await foreach (var result in results)
       {
-        knowledge.AppendLine(result.Metadata.Text);
+        var text = result.Metadata.Text.Replace("search_document: ", string.Empty);
+        knowledge.AppendLine(text);
       }
 
       return knowledge.ToString();

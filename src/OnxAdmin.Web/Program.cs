@@ -1,8 +1,24 @@
 #pragma warning disable SKEXP0001, SKEXP0020
 
+using System.IO.Abstractions;
+
+using Microsoft.AspNetCore.HttpLogging;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+
+builder.Services.AddLogging(c => 
+  c.AddJsonConsole(o => 
+  {
+    o.IncludeScopes = true;
+    o.TimestampFormat = "HH:mm:ss ";
+    o.UseUtcTimestamp = true;
+    o.JsonWriterOptions = new() { Indented = true };
+  })
+  .SetMinimumLevel(LogLevel.Information)
+);
+builder.Services.AddHttpLogging(o => o.LoggingFields = HttpLoggingFields.All);
 
 builder.Services.ConfigureOptions<AnthropicOptionsSetup>();
 builder.Services.ConfigureHttpClientDefaults(
@@ -42,6 +58,8 @@ builder.Services.AddTransient<ITextEmbeddingGenerationService, OllamaTextEmbeddi
 });
 
 builder.Services.AddTransient<ISemanticTextMemory, SemanticTextMemory>();
+
+builder.Services.AddScoped<IFileSystem, FileSystem>();
 
 var generateEmbeddings = builder.Configuration.GetValue("GenerateEmbeddings", false);
 
