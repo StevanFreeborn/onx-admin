@@ -202,15 +202,25 @@
     }
   }
 
-  private void AddMessage(Message msg)
+  private async Task AddMessage(Message msg)
   {
     if (msg.Role is RoleType.User)
     {
       _prompt = string.Empty;
+
+      if (Module is not null)
+      {
+        await Module.InvokeVoidAsync("resetPrompt");
+      }
     }
 
     _messages.Add(msg);
     StateHasChanged();
+
+    if (Module is not null)
+    {
+      await Module.InvokeVoidAsync("scrollToBottom");
+    }
   }
 
   private void UpdateRunningState(bool isRunning)
@@ -228,13 +238,7 @@
 
     UpdateRunningState(true);
 
-    AddMessage(new(RoleType.User, _prompt));
-
-    if (Module is not null)
-    {
-      await Module.InvokeVoidAsync("resetPrompt");
-      await Module.InvokeVoidAsync("scrollToBottom");
-    }
+    await AddMessage(new(RoleType.User, _prompt));
 
     MessageResponse? response = null;
 
@@ -247,7 +251,7 @@
           try
           {
             var toolResult = await toolCall.InvokeAsync<string>();
-            AddMessage(new Message(toolCall, toolResult));
+            await AddMessage(new Message(toolCall, toolResult));
           }
           catch (Exception ex) when (ex is ToolException)
           {
@@ -258,24 +262,19 @@
               IsError = true
             };
 
-            AddMessage(new Message() { Role = RoleType.User, Content = [toolResult] });
+            await AddMessage(new Message() { Role = RoleType.User, Content = [toolResult] });
           }
         }
 
         response = await AnthropicService.GenerateResponseAsync(_messages);
-        AddMessage(response.Message);
+        await AddMessage(response.Message);
       }
       else
       {
         response = await AnthropicService.GenerateResponseAsync(_messages);
-        AddMessage(response.Message);
+        await AddMessage(response.Message);
       }
     } while (response is not null && response.ToolCalls.Count > 0);
-
-    if (Module is not null)
-    {
-      await Module.InvokeVoidAsync("scrollToBottom");
-    }
 
     UpdateRunningState(false);
   }
