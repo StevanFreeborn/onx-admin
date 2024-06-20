@@ -63,6 +63,8 @@ builder.Services.AddScoped<IFileSystem, FileSystem>();
 
 builder.Services.AddScoped<IWeatherService, WeatherService>();
 
+builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+
 var generateEmbeddings = builder.Configuration.GetValue("GenerateEmbeddings", false);
 
 if (generateEmbeddings)

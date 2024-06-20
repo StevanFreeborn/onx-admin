@@ -31,6 +31,13 @@ enum FieldType
   Text,
 }
 
+record Field
+{
+  public string Name { get; init; } = string.Empty;
+  public FieldType Type { get; init; }
+  public string Description { get; init; } = string.Empty;
+}
+
 interface IOnspringService : IToolProvider
 {
   Task<List<HelpCenterDocument>> GetHelpCenterDocumentsAsync();
@@ -47,16 +54,12 @@ class OnspringService(
   private readonly ILogger<OnspringService> _logger = logger;
   private IBrowser? Browser { get; set; }
 
-  [Function("This function allows the user to create a new field in an app in an Onspring instance. It will return the URL of the app where the field was created.")]
-  public async Task<string> CreateFieldAsync(
+  [Function("This function allows the user to create one or more fields in an app in an Onspring instance. It will return the URL of the app where the field(s) were created.")]
+  public async Task<string> CreateFieldsAsync(
     [FunctionParameter("The name of the app where the field should be created create", true)] 
     string appName,
-    [FunctionParameter("The name of the field to create", true)] 
-    string name,
-    [FunctionParameter("The type of the field to create", true)] 
-    FieldType type,
-    [FunctionParameter("The description of the field to create", false)] 
-    string description = ""
+    [FunctionParameter("The fields to create. Each field should have a name, type, and description.", true)]
+    List<Field> fields
   )
   {
     return await PerformActionAsync(async page =>
@@ -76,41 +79,49 @@ class OnspringService(
       await appRow.ClickAsync();
       await page.WaitForURLAsync(new Regex(@"/Admin/App/\d+", RegexOptions.IgnoreCase));
       await page.GetByRole(AriaRole.Tab, new() { NameRegex = new("layouts", RegexOptions.IgnoreCase) }).ClickAsync();
-
-      await page.Locator("[data-add-button='layout-item']").ClickAsync();
-
-      var layoutItemMenu = page.Locator("[data-add-menu='layout-item']");
-      await layoutItemMenu.WaitForAsync();
-      await layoutItemMenu.GetByText(new Regex($"{type}", RegexOptions.IgnoreCase)).First.ClickAsync();
-
-      var addFieldDialog = page.GetByRole(AriaRole.Dialog, new() { NameRegex = new($"add.*field", RegexOptions.IgnoreCase) });
-      await addFieldDialog.WaitForAsync();
-      await addFieldDialog.GetByRole(AriaRole.Button, new() { NameRegex = new("continue", RegexOptions.IgnoreCase) }).ClickAsync();
-      await addFieldDialog.WaitForAsync();
-
-      var frame = addFieldDialog.FrameLocator("iframe");
-      await frame.Locator(".label:has-text('Field') + .data input").FillAsync(name);
-      await frame.Locator(".label:has-text('Description') + .data .content-area.mce-content-body").FillAsync(description);
-      await addFieldDialog.GetByRole(AriaRole.Button, new() { NameRegex = new("save", RegexOptions.IgnoreCase) }).ClickAsync();
-
-      var addFieldResponse = await page.WaitForResponseAsync(new Regex(@"/Admin/App/\d+/Field/AddUsingSettings", RegexOptions.IgnoreCase));
-
-      if (addFieldResponse.Ok is false)
+      
+      foreach (var field in fields)
       {
-        throw new ToolException("Failed to create field");
-      }
-
-      var addFieldResponseJson = await addFieldResponse.JsonAsync();
-
-      if (addFieldResponseJson.Value.TryGetProperty("success", out var success) && success.GetBoolean() is false)
-      {
-        var errors = addFieldResponseJson.Value.GetProperty("errors").EnumerateArray().Select(e => e.GetProperty("message").GetString()).ToList();
-        var message = string.Join(Environment.NewLine, errors);
-        throw new ToolException(message);
+        await CreateField(page, field.Type, field.Name, field.Description);
       }
 
       return page.Url;
     });
+  }
+
+  private async Task CreateField(IPage page, FieldType type, string name, string description)
+  {
+    await page.Locator("[data-add-button='layout-item']").ClickAsync();
+
+    var layoutItemMenu = page.Locator("[data-add-menu='layout-item']");
+    await layoutItemMenu.WaitForAsync();
+    await layoutItemMenu.GetByText(new Regex($"{type}", RegexOptions.IgnoreCase)).First.ClickAsync();
+
+    var addFieldDialog = page.GetByRole(AriaRole.Dialog, new() { NameRegex = new($"add.*field", RegexOptions.IgnoreCase) });
+    await addFieldDialog.WaitForAsync();
+    await addFieldDialog.GetByRole(AriaRole.Button, new() { NameRegex = new("continue", RegexOptions.IgnoreCase) }).ClickAsync();
+    await addFieldDialog.WaitForAsync();
+
+    var frame = addFieldDialog.FrameLocator("iframe");
+    await frame.Locator(".label:has-text('Field') + .data input").FillAsync(name);
+    await frame.Locator(".label:has-text('Description') + .data .content-area.mce-content-body").FillAsync(description);
+    await addFieldDialog.GetByRole(AriaRole.Button, new() { NameRegex = new("save", RegexOptions.IgnoreCase) }).ClickAsync();
+
+    var addFieldResponse = await page.WaitForResponseAsync(new Regex(@"/Admin/App/\d+/Field/AddUsingSettings", RegexOptions.IgnoreCase));
+
+    if (addFieldResponse.Ok is false)
+    {
+      throw new ToolException("Failed to create field");
+    }
+
+    var addFieldResponseJson = await addFieldResponse.JsonAsync();
+
+    if (addFieldResponseJson.Value.TryGetProperty("success", out var success) && success.GetBoolean() is false)
+    {
+      var errors = addFieldResponseJson.Value.GetProperty("errors").EnumerateArray().Select(e => e.GetProperty("message").GetString()).ToList();
+      var message = string.Join(Environment.NewLine, errors);
+      throw new ToolException(message);
+    }
   }
 
   [Function("This function allows the user to create a new app in an Onspring instance. It will return the URL of the app that was created.")]
