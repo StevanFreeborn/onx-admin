@@ -2,7 +2,7 @@ namespace OnxAdmin.AnthropicConnector.Tests.Unit.Models;
 
 public class ImageContentTests : SerializationTest
 {
-  private readonly string _testJson = @"{""source"":{""mediaType"":""image/png"",""data"":""data""},""type"":""image""}";
+  private readonly string _testJson = @"{""source"":{""media_type"":""image/png"",""data"":""data""},""type"":""image""}";
 
   [Fact]
   public void Constructor_WhenCalled_ItShouldInitializeSource()
