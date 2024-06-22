@@ -5,6 +5,10 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnxAdmin.Web", "OnxAdmin.Web\OnxAdmin.Web.csproj", "{093237EA-390E-4FA0-8E70-95F723B188FB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnxAdmin.AnthropicConnector", "OnxAdmin.AnthropicConnector\OnxAdmin.AnthropicConnector.csproj", "{45586205-A723-45FA-8A7B-40852808B913}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnxAdmin.AnthropicConnector.Tests", "OnxAdmin.AnthropicConnector.Tests\OnxAdmin.AnthropicConnector.Tests.csproj", "{B563A109-2B7B-4FD3-846C-704AF74395DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{093237EA-390E-4FA0-8E70-95F723B188FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{093237EA-390E-4FA0-8E70-95F723B188FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{093237EA-390E-4FA0-8E70-95F723B188FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45586205-A723-45FA-8A7B-40852808B913}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45586205-A723-45FA-8A7B-40852808B913}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45586205-A723-45FA-8A7B-40852808B913}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45586205-A723-45FA-8A7B-40852808B913}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B563A109-2B7B-4FD3-846C-704AF74395DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B563A109-2B7B-4FD3-846C-704AF74395DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B563A109-2B7B-4FD3-846C-704AF74395DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B563A109-2B7B-4FD3-846C-704AF74395DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
