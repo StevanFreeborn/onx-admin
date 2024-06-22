@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 public class InputProperty
@@ -14,6 +16,9 @@ public class InputProperty
 
   public InputProperty(string type, string description)
   {
+    ArgumentValidator.ThrowIfNull(type, nameof(type));
+    ArgumentValidator.ThrowIfNull(description, nameof(description));
+
     Type = type;
     Description = description;
   }
