@@ -2,6 +2,8 @@ namespace OnxAdmin.AnthropicConnector.Tests.Unit.Models;
 
 public class ImageContentTests : SerializationTest
 {
+  private readonly string _testJson = @"{""source"":{""mediaType"":""image/png"",""data"":""data""},""type"":""image""}";
+
   [Fact]
   public void Constructor_WhenCalled_ItShouldInitializeSource()
   {
@@ -42,5 +44,25 @@ public class ImageContentTests : SerializationTest
     var action = () => new ImageContent(expectedMediaType, expectedData);
 
     action.Should().Throw<ArgumentException>();
+  }
+
+  [Fact]
+  public void JsonSerialization_WhenSerialized_ItShouldHaveExpectedShape()
+  {
+    var content = new ImageContent("image/png", "data");
+
+    var actual = Serialize(content);
+
+    actual.Should().BeEquivalentTo(_testJson);
+  }
+
+  [Fact]
+  public void JsonDeserialization_WhenDeserialized_ItShouldHaveExpectedShape()
+  {
+    var expected = new ImageContent("image/png", "data");
+
+    var actual = Deserialize<ImageContent>(_testJson);
+
+    actual.Should().BeEquivalentTo(expected);
   }
 }
