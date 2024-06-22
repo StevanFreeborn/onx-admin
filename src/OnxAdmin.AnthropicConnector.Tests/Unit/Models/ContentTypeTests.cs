@@ -21,15 +21,4 @@ public class ContentTypeTests
 
     actual.Should().Be(expected);
   }
-
-  [Theory]
-  [InlineData("text", true)]
-  [InlineData("image", true)]
-  [InlineData("invalid", false)]
-  public void IsValidContentType_WhenCalled_ItShouldReturnExpectedValue(string contentType, bool expected)
-  {
-    var actual = ContentType.IsValidContentType(contentType);
-
-    actual.Should().Be(expected);
-  }
 }
