@@ -6,6 +6,7 @@ namespace OnxAdmin.AnthropicConnector.Models;
 
 public class ImageSource
 {
+  [JsonPropertyName("media_type")]
   public string MediaType { get; init; } = string.Empty;
   public string Data { get; init; } = string.Empty;
 

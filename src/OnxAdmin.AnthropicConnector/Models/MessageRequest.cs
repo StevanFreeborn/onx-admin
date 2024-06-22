@@ -2,18 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace OnxAdmin.AnthropicConnector.Models;
 
-public abstract class MessageRequest
+public abstract class MessageRequest(bool stream)
 {
-  public bool Stream { get; init; }
-
-
-  [JsonConstructor]
-  protected MessageRequest()
-  {
-  }
-
-  protected MessageRequest(bool stream)
-  {
-    Stream = stream;
-  }
+  public bool Stream { get; init; } = stream;
 }
