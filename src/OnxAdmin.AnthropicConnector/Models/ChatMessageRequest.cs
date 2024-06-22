@@ -12,7 +12,7 @@ public class ChatMessageRequest : MessageRequest
 
   [JsonPropertyName("max_tokens")]
   public int MaxTokens { get; init; } = 1024;
-  public object? Metadata { get; init; } = null;
+  public Dictionary<string, object>? Metadata { get; init; } = null;
 
   [JsonPropertyName("stop_sequences")]
   public List<string> StopSequences { get; init; } = [];
@@ -32,7 +32,7 @@ public class ChatMessageRequest : MessageRequest
     List<ChatMessage> messages,
     int maxTokens = 1024,
     string? system = null,
-    object? metadata = null,
+    Dictionary<string, object>? metadata = null,
     decimal temperature = 0.0m,
     int? topK = null,
     decimal? topP = null,

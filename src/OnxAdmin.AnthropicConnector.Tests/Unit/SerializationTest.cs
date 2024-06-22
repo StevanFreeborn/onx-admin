@@ -8,7 +8,11 @@ public class SerializationTest
   {
     PropertyNameCaseInsensitive = true,
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    Converters = { new ContentConverter() }
+    Converters =
+    {
+      new ContentConverter(),
+      new ToolChoiceConverter()
+    }
   };
 
   protected string Serialize<T>(T obj) => JsonSerializer.Serialize(obj, _jsonSerializerOptions);

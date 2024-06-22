@@ -5,7 +5,7 @@ using OnxAdmin.AnthropicConnector.Models;
 
 namespace OnxAdmin.AnthropicConnector.Json;
 
-public class ContentConverter : JsonConverter<Content>
+class ContentConverter : JsonConverter<Content>
 {
   public override Content Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
   {
