@@ -45,6 +45,7 @@ public class ChatMessageRequestTests : SerializationTest
     chatMessageRequest.TopP.Should().Be(topP);
     chatMessageRequest.ToolChoice.Should().Be(toolChoice);
     chatMessageRequest.Tools.Should().BeSameAs(tools);
+    chatMessageRequest.Stream.Should().BeFalse();
   }
 
   [Fact]
@@ -205,6 +206,7 @@ public class ChatMessageRequestTests : SerializationTest
     chatMessageRequest.Tools[0].InputSchema.Properties["test-property"].Description.Should().Be("test-description");
     chatMessageRequest.Tools[0].InputSchema.Required.Should().HaveCount(1);
     chatMessageRequest.Tools[0].InputSchema.Required[0].Should().Be("test-property");
+    chatMessageRequest.Stream.Should().BeFalse();
   }
 
   [Fact]
