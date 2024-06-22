@@ -1,6 +1,5 @@
 namespace OnxAdmin.AnthropicConnector.Models;
 
-// image/jpeg, image/png, image/gif, and image/webp
 public static class ImageType
 {
   public const string Jpg = "image/jpeg";
