@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 public class InputSchema
@@ -15,8 +17,8 @@ public class InputSchema
 
   public InputSchema(Dictionary<string, InputProperty> properties, List<string> required)
   {
-    ArgumentNullException.ThrowIfNull(properties, nameof(properties));
-    ArgumentNullException.ThrowIfNull(required, nameof(required));
+    ArgumentValidator.ThrowIfNull(properties, nameof(properties));
+    ArgumentValidator.ThrowIfNull(required, nameof(required));
 
     if (required.Any(r => properties.ContainsKey(r) is false))
     {

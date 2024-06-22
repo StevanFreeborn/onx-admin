@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 public class TextContent : Content
@@ -10,11 +12,11 @@ public class TextContent : Content
   internal TextContent() : base(ContentType.Text)
   {
   }
-  
+
   public TextContent(string text) : base(ContentType.Text)
   {
-    ArgumentNullException.ThrowIfNull(text, nameof(text));
-    
+    ArgumentValidator.ThrowIfNull(text, nameof(text));
+
     Text = text;
   }
 }

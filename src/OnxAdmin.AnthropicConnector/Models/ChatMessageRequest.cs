@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 public class ChatMessageRequest : MessageRequest
@@ -26,9 +28,9 @@ public class ChatMessageRequest : MessageRequest
   internal ChatMessageRequest() : base(false) { }
 
   public ChatMessageRequest(
-    string model, 
-    List<ChatMessage> messages, 
-    int maxTokens = 1024, 
+    string model,
+    List<ChatMessage> messages,
+    int maxTokens = 1024,
     string? system = null,
     object? metadata = null,
     decimal temperature = 0.0m,
@@ -38,12 +40,22 @@ public class ChatMessageRequest : MessageRequest
     List<Tool>? tools = null
   ) : base(false)
   {
-    ArgumentNullException.ThrowIfNull(model, nameof(model));
-    ArgumentNullException.ThrowIfNull(messages, nameof(messages));
-    
+    ArgumentValidator.ThrowIfNull(model, nameof(model));
+    ArgumentValidator.ThrowIfNull(messages, nameof(messages));
+
     if (AnthropicModels.IsValidModel(model) is false)
     {
       throw new ArgumentException($"Invalid model ID: {model}");
+    }
+
+    if (messages.Count < 1)
+    {
+      throw new ArgumentException("Messages must contain at least one message");
+    }
+
+    if (maxTokens < 1)
+    {
+      throw new ArgumentException($"Invalid max tokens: {maxTokens}");
     }
 
     if (temperature < 0.0m || temperature > 1.0m)

@@ -1,3 +1,5 @@
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 interface IAnthropicClient
@@ -17,15 +19,15 @@ public class AnthropicClient : IAnthropicClient
 
   public AnthropicClient(string apiKey, HttpClient httpClient)
   {
-    ArgumentNullException.ThrowIfNull(apiKey, nameof(apiKey));
-    ArgumentNullException.ThrowIfNull(httpClient, nameof(httpClient));
+    ArgumentValidator.ThrowIfNull(apiKey, nameof(apiKey));
+    ArgumentValidator.ThrowIfNull(httpClient, nameof(httpClient));
 
     _httpClient = httpClient;
     _httpClient.DefaultRequestHeaders.Add(ApiKeyHeader, apiKey);
 
-    foreach (var (key, value) in _defaultHeaders)
+    foreach (var pair in _defaultHeaders)
     {
-      _httpClient.DefaultRequestHeaders.Add(key, value);
+      _httpClient.DefaultRequestHeaders.Add(pair.Key, pair.Value);
     }
   }
 }

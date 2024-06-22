@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 public class SpecificToolChoice : ToolChoice
@@ -11,10 +13,10 @@ public class SpecificToolChoice : ToolChoice
   {
   }
 
-  public SpecificToolChoice(string name) : base(ToolChoiceType.Tool) 
-  { 
-    ArgumentNullException.ThrowIfNull(name, nameof(name));
-    
+  public SpecificToolChoice(string name) : base(ToolChoiceType.Tool)
+  {
+    ArgumentValidator.ThrowIfNull(name, nameof(name));
+
     Name = name;
   }
 }

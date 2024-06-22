@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 public class ChatMessage
@@ -14,8 +16,8 @@ public class ChatMessage
 
   public ChatMessage(string role, List<Content> content)
   {
-    ArgumentNullException.ThrowIfNull(role, nameof(role));
-    ArgumentNullException.ThrowIfNull(content, nameof(content));
+    ArgumentValidator.ThrowIfNull(role, nameof(role));
+    ArgumentValidator.ThrowIfNull(content, nameof(content));
 
     if (MessageRole.IsValidRole(role) is false)
     {

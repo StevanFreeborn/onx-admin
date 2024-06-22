@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 public class ImageSource
@@ -14,14 +16,14 @@ public class ImageSource
 
   public ImageSource(string mediaType, string data)
   {
-    ArgumentNullException.ThrowIfNull(mediaType, nameof(mediaType));
+    ArgumentValidator.ThrowIfNull(mediaType, nameof(mediaType));
 
     if (ImageType.IsValidImageType(mediaType) is false)
     {
       throw new ArgumentException($"Invalid media type: {mediaType}");
     }
 
-    ArgumentNullException.ThrowIfNull(data, nameof(data));
+    ArgumentValidator.ThrowIfNull(data, nameof(data));
 
     MediaType = mediaType;
     Data = data;

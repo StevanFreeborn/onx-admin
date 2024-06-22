@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using OnxAdmin.AnthropicConnector.Utils;
+
 namespace OnxAdmin.AnthropicConnector.Models;
 
 public class ImageContent : Content
@@ -10,12 +12,12 @@ public class ImageContent : Content
   internal ImageContent()
   {
   }
-  
+
   public ImageContent(string mediaType, string data) : base(ContentType.Image)
   {
-    ArgumentNullException.ThrowIfNull(mediaType, nameof(mediaType));
-    ArgumentNullException.ThrowIfNull(data, nameof(data));
-    
+    ArgumentValidator.ThrowIfNull(mediaType, nameof(mediaType));
+    ArgumentValidator.ThrowIfNull(data, nameof(data));
+
     Source = new(mediaType, data);
   }
 }
