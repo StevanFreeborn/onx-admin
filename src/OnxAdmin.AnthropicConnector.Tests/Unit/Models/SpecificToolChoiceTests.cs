@@ -19,7 +19,7 @@ public class SpecificToolChoiceTests : SerializationTest
   [Fact]
   public void Constructor_WhenCalledWithNull_ItShouldThrowArgumentNullException()
   {
-    Action action = () => new SpecificToolChoice(null!);
+    var action = () => new SpecificToolChoice(null!);
 
     action.Should().Throw<ArgumentNullException>();
   }
