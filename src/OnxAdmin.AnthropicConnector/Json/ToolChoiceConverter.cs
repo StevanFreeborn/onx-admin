@@ -11,9 +11,7 @@ class ToolChoiceConverter : JsonConverter<ToolChoice>
   {
     using var jsonDocument = JsonDocument.ParseValue(ref reader);
     var root = jsonDocument.RootElement;
-
     var type = root.GetProperty("type").GetString();
-
     return type switch
     {
       ToolChoiceType.Auto => JsonSerializer.Deserialize<AutoToolChoice>(root.GetRawText(), options)!,

@@ -9,9 +9,9 @@ public class AnthropicChatCompletionService : IChatCompletionService
   public IReadOnlyDictionary<string, object?> Attributes => throw new NotImplementedException();
 
   public Task<IReadOnlyList<ChatMessageContent>> GetChatMessageContentsAsync(
-    ChatHistory chatHistory, 
-    PromptExecutionSettings? executionSettings = null, 
-    Kernel? kernel = null, 
+    ChatHistory chatHistory,
+    PromptExecutionSettings? executionSettings = null,
+    Kernel? kernel = null,
     CancellationToken cancellationToken = default
   )
   {
@@ -19,9 +19,9 @@ public class AnthropicChatCompletionService : IChatCompletionService
   }
 
   public IAsyncEnumerable<StreamingChatMessageContent> GetStreamingChatMessageContentsAsync(
-    ChatHistory chatHistory, 
-    PromptExecutionSettings? executionSettings = null, 
-    Kernel? kernel = null, 
+    ChatHistory chatHistory,
+    PromptExecutionSettings? executionSettings = null,
+    Kernel? kernel = null,
     CancellationToken cancellationToken = default
   )
   {
