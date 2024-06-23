@@ -7,6 +7,8 @@ public class ChatMessageRequestTests : SerializationTest
   private readonly string _testJsonWithSpecificToolChoice = @"{""model"":""claude-3-sonnet-20240229"",""system"":""test-system"",""messages"":[{""role"":""user"",""content"":[{""text"":""Hello!"",""type"":""text""}]}],""max_tokens"":512,""metadata"":{""test"":""test""},""stop_sequences"":[],""temperature"":0.5,""topK"":10,""topP"":0.5,""tool_choice"":{""type"":""tool"",""name"":""test-tool""},""tools"":[{""name"":""test-tool"",""description"":""test-description"",""input_schema"":{""type"":""object"",""properties"":{""test-property"":{""type"":""string"",""description"":""test-description""}},""required"":[""test-property""]}}],""stream"":false}";
   private readonly string _testJsonWithImageContent = @"{""model"":""claude-3-sonnet-20240229"",""system"":""test-system"",""messages"":[{""role"":""user"",""content"":[{""type"":""image"",""source"":{""media_type"": ""image/jpeg"",""data"":""data""}}]}],""max_tokens"":512,""metadata"":{""test"":""test""},""stop_sequences"":[],""temperature"":0.5,""topK"":10,""topP"":0.5,""tool_choice"":{""type"":""auto""},""tools"":[{""name"":""test-tool"",""description"":""test-description"",""input_schema"":{""type"":""object"",""properties"":{""test-property"":{""type"":""string"",""description"":""test-description""}},""required"":[""test-property""]}}],""stream"":false}";
   private readonly string _testJsonWithUnknownContent = @"{""model"":""claude-3-sonnet-20240229"",""system"":""test-system"",""messages"":[{""role"":""user"",""content"":[{""type"":""unknown"",""text"":""text""}]}],""max_tokens"":512,""metadata"":{""test"":""test""},""stop_sequences"":[],""temperature"":0.5,""topK"":10,""topP"":0.5,""tool_choice"":{""type"":""auto""},""tools"":[{""name"":""test-tool"",""description"":""test-description"",""input_schema"":{""type"":""object"",""properties"":{""test-property"":{""type"":""string"",""description"":""test-description""}},""required"":[""test-property""]}}],""stream"":false}";
+  private readonly string _testJsonWithToolUseContent = @"{""model"":""claude-3-sonnet-20240229"",""system"":""test-system"",""messages"":[{""role"":""assistant"",""content"":[{""type"":""tool_use"",""name"":""test-tool"",""id"":""test-tool-id"",""input"":{""test-property"":""test-value""}}]}],""max_tokens"":512,""metadata"":{""test"":""test""},""stop_sequences"":[],""temperature"":0.5,""topK"":10,""topP"":0.5,""tool_choice"":{""type"":""auto""},""tools"":[{""name"":""test-tool"",""description"":""test-description"",""input_schema"":{""type"":""object"",""properties"":{""test-property"":{""type"":""string"",""description"":""test-description""}},""required"":[""test-property""]}}],""stream"":false}";
+  private readonly string _testJsonWithToolResultContent = @"{""model"":""claude-3-sonnet-20240229"",""system"":""test-system"",""messages"":[{""role"":""assistant"",""content"":[{""type"":""tool_result"",""tool_use_id"":""test-tool"",""content"":""test-value""}]}],""max_tokens"":512,""metadata"":{""test"":""test""},""stop_sequences"":[],""temperature"":0.5,""topK"":10,""topP"":0.5,""tool_choice"":{""type"":""auto""},""tools"":[{""name"":""test-tool"",""description"":""test-description"",""input_schema"":{""type"":""object"",""properties"":{""test-property"":{""type"":""string"",""description"":""test-description""}},""required"":[""test-property""]}}],""stream"":false}";
 
   [Fact]
   public void Constructor_WhenCalled_ItShouldInitializeProperties()
@@ -318,6 +320,84 @@ public class ChatMessageRequestTests : SerializationTest
     imageContent!.Type.Should().Be("image");
     imageContent.Source.MediaType.Should().Be("image/jpeg");
     imageContent.Source.Data.Should().Be("data");
+  }
+
+  [Fact]
+  public void JsonDeserialization_WhenDeserializedWithToolUseContent_ItShouldHaveExpectedShape()
+  {
+    var chatMessageRequest = Deserialize<ChatMessageRequest>(_testJsonWithToolUseContent);
+
+    chatMessageRequest!.Model.Should().Be(AnthropicModels.Claude3Sonnet);
+    chatMessageRequest.System.Should().Be("test-system");
+    chatMessageRequest.Messages.Should().HaveCount(1);
+    chatMessageRequest.MaxTokens.Should().Be(512);
+    chatMessageRequest.Metadata.Should().HaveCount(1);
+
+    var testValue = chatMessageRequest.Metadata!.GetValueOrDefault("test")!.ToString();
+    testValue.Should().Be("test");
+
+    chatMessageRequest.Temperature.Should().Be(0.5m);
+    chatMessageRequest.TopK.Should().Be(10);
+    chatMessageRequest.TopP.Should().Be(0.5m);
+    chatMessageRequest.ToolChoice.Should().BeOfType<AutoToolChoice>();
+    chatMessageRequest.ToolChoice!.Type.Should().Be("auto");
+    chatMessageRequest.Tools.Should().HaveCount(1);
+    chatMessageRequest.Tools![0].Name.Should().Be("test-tool");
+    chatMessageRequest.Tools[0].Description.Should().Be("test-description");
+    chatMessageRequest.Tools[0].InputSchema.Type.Should().Be("object");
+    chatMessageRequest.Tools[0].InputSchema.Properties.Should().HaveCount(1);
+    chatMessageRequest.Tools[0].InputSchema.Properties["test-property"].Type.Should().Be("string");
+    chatMessageRequest.Tools[0].InputSchema.Properties["test-property"].Description.Should().Be("test-description");
+    chatMessageRequest.Tools[0].InputSchema.Required.Should().HaveCount(1);
+    chatMessageRequest.Tools[0].InputSchema.Required[0].Should().Be("test-property");
+
+    chatMessageRequest.Messages[0].Content.Should().HaveCount(1);
+    chatMessageRequest.Messages[0].Content[0].Should().BeOfType<ToolUseContent>();
+
+    var toolUseContent = chatMessageRequest.Messages[0].Content[0] as ToolUseContent;
+    toolUseContent!.Type.Should().Be("tool_use");
+    toolUseContent.Name.Should().Be("test-tool");
+    toolUseContent.Id.Should().Be("test-tool-id");
+    toolUseContent.Input.Should().HaveCount(1);
+    toolUseContent.Input["test-property"].ToString().Should().Be("test-value");
+  }
+
+  [Fact]
+  public void JsonDeserialization_WhenDeserializedWithToolResultContent_ItShouldHaveExpectedShape()
+  {
+    var chatMessageRequest = Deserialize<ChatMessageRequest>(_testJsonWithToolResultContent);
+
+    chatMessageRequest!.Model.Should().Be(AnthropicModels.Claude3Sonnet);
+    chatMessageRequest.System.Should().Be("test-system");
+    chatMessageRequest.Messages.Should().HaveCount(1);
+    chatMessageRequest.MaxTokens.Should().Be(512);
+    chatMessageRequest.Metadata.Should().HaveCount(1);
+
+    var testValue = chatMessageRequest.Metadata!.GetValueOrDefault("test")!.ToString();
+    testValue.Should().Be("test");
+
+    chatMessageRequest.Temperature.Should().Be(0.5m);
+    chatMessageRequest.TopK.Should().Be(10);
+    chatMessageRequest.TopP.Should().Be(0.5m);
+    chatMessageRequest.ToolChoice.Should().BeOfType<AutoToolChoice>();
+    chatMessageRequest.ToolChoice!.Type.Should().Be("auto");
+    chatMessageRequest.Tools.Should().HaveCount(1);
+    chatMessageRequest.Tools![0].Name.Should().Be("test-tool");
+    chatMessageRequest.Tools[0].Description.Should().Be("test-description");
+    chatMessageRequest.Tools[0].InputSchema.Type.Should().Be("object");
+    chatMessageRequest.Tools[0].InputSchema.Properties.Should().HaveCount(1);
+    chatMessageRequest.Tools[0].InputSchema.Properties["test-property"].Type.Should().Be("string");
+    chatMessageRequest.Tools[0].InputSchema.Properties["test-property"].Description.Should().Be("test-description");
+    chatMessageRequest.Tools[0].InputSchema.Required.Should().HaveCount(1);
+    chatMessageRequest.Tools[0].InputSchema.Required[0].Should().Be("test-property");
+
+    chatMessageRequest.Messages[0].Content.Should().HaveCount(1);
+    chatMessageRequest.Messages[0].Content[0].Should().BeOfType<ToolResultContent>();
+
+    var toolResultContent = chatMessageRequest.Messages[0].Content[0] as ToolResultContent;
+    toolResultContent!.Type.Should().Be("tool_result");
+    toolResultContent.ToolUseId.Should().Be("test-tool");
+    toolResultContent.Content.Should().Be("test-value");
   }
 
   [Fact]
