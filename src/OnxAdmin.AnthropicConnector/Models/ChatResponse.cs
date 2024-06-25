@@ -10,6 +10,8 @@ public class ChatResponse
 
   [JsonPropertyName("stop_reason")]
   public string StopReason { get; set; } = string.Empty;
+
+  [JsonPropertyName("stop_sequence")]
   public string StopSequence { get; set; } = string.Empty;
   public string Type { get; set; } = string.Empty;
   public ChatUsage Usage { get; set; } = new();
