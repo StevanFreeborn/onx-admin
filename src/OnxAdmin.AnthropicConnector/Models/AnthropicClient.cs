@@ -10,7 +10,6 @@ namespace OnxAdmin.AnthropicConnector.Models;
 interface IAnthropicClient
 {
   Task<AnthropicResult<ChatResponse>> CreateChatMessageAsync(ChatMessageRequest request);
-  Task<AnthropicResult<ChatResponse>> CreateChatMessageAsync(Action<ChatMessageRequest> request);
 }
 
 public class AnthropicClient : IAnthropicClient
@@ -59,11 +58,6 @@ public class AnthropicClient : IAnthropicClient
 
     var chatResponse = Deserialize<ChatResponse>(responseContent) ?? new ChatResponse();
     return AnthropicResult<ChatResponse>.Success(chatResponse, requestId);
-  }
-
-  public Task<AnthropicResult<ChatResponse>> CreateChatMessageAsync(Action<ChatMessageRequest> request)
-  {
-    throw new NotImplementedException();
   }
 
   private string Serialize<T>(T obj) => JsonSerializer.Serialize(obj, JsonSerializationOptions.DefaultOptions);
