@@ -359,7 +359,7 @@ public class ChatMessageRequestTests : SerializationTest
     toolUseContent.Name.Should().Be("test-tool");
     toolUseContent.Id.Should().Be("test-tool-id");
     toolUseContent.Input.Should().HaveCount(1);
-    toolUseContent.Input["test-property"].ToString().Should().Be("test-value");
+    toolUseContent.Input["test-property"]!.ToString().Should().Be("test-value");
   }
 
   [Fact]
