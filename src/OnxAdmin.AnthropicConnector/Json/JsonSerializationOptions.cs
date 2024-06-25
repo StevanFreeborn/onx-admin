@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace OnxAdmin.AnthropicConnector.Json;
 
@@ -11,7 +12,9 @@ static class JsonSerializationOptions
     Converters =
     {
       new ContentConverter(),
-      new ToolChoiceConverter()
-    }
+      new ToolChoiceConverter(),
+      new ErrorConverter(),
+    },
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
   };
 }
