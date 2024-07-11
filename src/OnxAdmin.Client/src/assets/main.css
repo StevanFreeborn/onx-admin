@@ -39,21 +39,30 @@ table {
 /* site styles */
 /* basic light and dark mode */
 :root {
-  --white: #f5f5f5;
-  --black: #333;
+  --white: #f9f9f9;
+  --black: #212121;
+  --secondary-black: #171717;
+  --secondary-white: #f5f5f5;
+
+  --background-color: var(--white);
+  --secondary-background-color: var(--secondary-white);
+  --text-color: var(--black);
+}
+
+
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: var(--black);
+    --secondary-background-color: var(--secondary-black);
+    --text-color: var(--white);
+  }
 }
 
 body {
   font-family: 'Roboto', sans-serif;
-  background-color: var(--white);
-  color: var(--black);
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: var(--black);
-    color: var(--white);
-  }
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 html,
@@ -70,7 +79,6 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 1rem;
 }
 
 .sr-only {

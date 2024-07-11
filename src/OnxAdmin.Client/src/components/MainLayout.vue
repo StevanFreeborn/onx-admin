@@ -3,31 +3,50 @@
 </script>
 
 <template>
-  <main>
-    <header>
-      <h1>OnxAdmin</h1>
-    </header>
-    <div class="main-content">
-      <RouterView />
-    </div>
-    <footer>
-      <p>OnxAdmin can make mistakes. Check important info</p>
-    </footer>
-  </main>
+  <div class="layout-container">
+    <aside></aside>
+    <main>
+      <header>
+        <h1>OnxAdmin</h1>
+      </header>
+      <div class="main-content">
+        <RouterView />
+      </div>
+      <footer>
+        <p>OnxAdmin can make mistakes. Check important info</p>
+      </footer>
+    </main>
+  </div>
 </template>
 
 <style scoped>
-  main {
+  .layout-container {
     display: flex;
-    justify-content: center;
+    height: 100%;
     flex: 1;
-    height: 0;
+    gap: 1rem;
 
-    & footer {
-      text-align: center;
+    aside {
+      width: 200px;
+      background-color: var(--secondary-background-color);
+    }
 
-      & p {
-        font-size: 0.75rem;
+    main {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding: 1rem;
+
+      .main-content {
+        flex: 1;
+      }
+
+      & footer {
+        text-align: center;
+
+        & p {
+          font-size: 0.75rem;
+        }
       }
     }
   }
