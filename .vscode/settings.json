@@ -5,5 +5,9 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "dotnet.defaultSolution": "src/server/Server.sln",
-  "cSpell.words": ["Prerendered"]
+  "cSpell.words": [
+    "Chunker",
+    "Ollama",
+    "Prerendered"
+  ]
 }
