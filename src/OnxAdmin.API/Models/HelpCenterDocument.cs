@@ -1,7 +1,13 @@
 namespace OnxAdmin.API.Models;
 
-class HelpCenterDocument
+record HelpCenterDocument
 {
-  public string Title { get; set; } = string.Empty;
-  public string Content { get; set; } = string.Empty;
+  public string Title { get; init; }
+  public string Content { get; init; }
+
+  public HelpCenterDocument(string title, string content)
+  {
+    Title = title;
+    Content = content;
+  }
 }
