@@ -7,7 +7,12 @@
   "dotnet.defaultSolution": "src/server/Server.sln",
   "cSpell.words": [
     "Chunker",
+    "Hardline",
+    "IAPI",
+    "Markdig",
     "Ollama",
-    "Prerendered"
+    "Prerendered",
+    "Softline",
+    "Unroute"
   ]
 }

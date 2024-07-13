@@ -6,6 +6,8 @@ using Codeblaze.SemanticKernel.Connectors.Ollama;
 using Microsoft.SemanticKernel.Connectors.Chroma;
 using Microsoft.SemanticKernel.Embeddings;
 
+using OnxAdmin.API.Factories;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
@@ -26,6 +28,11 @@ builder.Services.AddTransient<IAnthropicApiClient, AnthropicApiClient>(sp =>
 });
 builder.Services.AddScoped<IChatService, AnthropicChatService>();
 
+builder.Services.AddScoped<IPageFactory, PageFactory>();
+builder.Services.AddScoped<IOnspringAdmin, OnspringAdmin>();
+builder.Services.ConfigureOptions<OnspringOptionsSetup>();
+builder.Services.AddScoped<IOnspringService, OnspringService>();
+
 builder.Services.ConfigureOptions<ChromaOptionsSetup>();
 builder.Services.AddTransient<IMemoryStore>(sp =>
 {
@@ -44,12 +51,7 @@ builder.Services.AddTransient<ITextEmbeddingGenerationService, OllamaTextEmbeddi
 });
 builder.Services.AddTransient<ISemanticTextMemory, SemanticTextMemory>();
 
-builder.Services.ConfigureOptions<OnspringOptionsSetup>();
-builder.Services.AddScoped<IOnspringService, OnspringService>();
-
-var generateEmbeddings = builder.Configuration.GetValue("GenerateEmbeddings", false);
-
-if (generateEmbeddings)
+if (builder.Configuration.GetValue("GenerateEmbeddings", false))
 {
   builder.Services.AddHostedService<HelpCenterGenerateEmbeddingsService>();
 }

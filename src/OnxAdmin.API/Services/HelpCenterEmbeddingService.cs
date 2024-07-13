@@ -2,39 +2,6 @@
 
 namespace OnxAdmin.API.Services;
 
-class ChromaOptions
-{
-  public string BaseUrl { get; set; } = string.Empty;
-}
-
-class ChromaOptionsSetup(IConfiguration config) : IConfigureOptions<ChromaOptions>
-{
-  private const string SectionName = nameof(ChromaOptions);
-  private readonly IConfiguration _config = config;
-
-  public void Configure(ChromaOptions options)
-  {
-    _config.GetSection(SectionName).Bind(options);
-  }
-}
-
-class OllamaTextEmbeddingOptions
-{
-  public string BaseUrl { get; set; } = string.Empty;
-  public string ModelId { get; set; } = string.Empty;
-}
-
-class OllamaTextEmbeddingOptionsSetup(IConfiguration config) : IConfigureOptions<OllamaTextEmbeddingOptions>
-{
-  private const string SectionName = nameof(OllamaTextEmbeddingOptions);
-  private readonly IConfiguration _config = config;
-
-  public void Configure(OllamaTextEmbeddingOptions options)
-  {
-    _config.GetSection(SectionName).Bind(options);
-  }
-}
-
 class HelpCenterGenerateEmbeddingsService(
   IServiceProvider serviceProvider,
   ILogger<HelpCenterGenerateEmbeddingsService> logger
@@ -67,7 +34,9 @@ class HelpCenterGenerateEmbeddingsService(
             collection: HelpCenterCollection,
             id: $"{document.Title}_{index}",
             description: document.Title,
-            text: $"search_document: {chunk}"
+            text: $"search_document: {chunk}",
+            additionalMetadata: document.Path,
+            cancellationToken: cancellationToken
           );
         }
         catch (Exception ex)

@@ -15,5 +15,24 @@ class OnspringOptionsSetup(IConfiguration config) : IConfigureOptions<OnspringOp
   public void Configure(OnspringOptions options)
   {
     _config.GetSection(SectionName).Bind(options);
+
+    if (
+      string.IsNullOrWhiteSpace(options.InstanceUrl) ||
+      Uri.TryCreate(options.InstanceUrl, UriKind.Absolute, out var uri) is false ||
+      uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps
+    )
+    {
+      throw new ArgumentException("OllamaTextEmbeddingOptions: BaseUrl must be a valid HTTP or HTTPS URL");
+    }
+
+    if (string.IsNullOrWhiteSpace(options.CopilotUsername))
+    {
+      throw new ArgumentException("OnspringOptions: CopilotUsername is required");
+    }
+
+    if (string.IsNullOrWhiteSpace(options.CopilotPassword))
+    {
+      throw new ArgumentException("OnspringOptions: CopilotPassword is required");
+    }
   }
 }

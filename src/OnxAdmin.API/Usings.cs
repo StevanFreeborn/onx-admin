@@ -15,3 +15,9 @@ global using Microsoft.SemanticKernel.Memory;
 global using Microsoft.SemanticKernel.Text;
 
 global using System.Text.Json;
+
+global using Microsoft.Playwright;
+
+global using System.Text.RegularExpressions;
+
+global using ReverseMarkdown;
