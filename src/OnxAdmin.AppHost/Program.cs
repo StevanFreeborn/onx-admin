@@ -1,3 +1,4 @@
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 var chroma = builder.AddContainer("chroma", "chromadb/chroma")

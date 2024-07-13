@@ -1,12 +1,3 @@
-#pragma warning disable SKEXP0001
-#pragma warning disable SKEXP0020
-
-using Codeblaze.SemanticKernel.Connectors.Ollama;
-
-using Microsoft.SemanticKernel.Connectors.Chroma;
-using Microsoft.SemanticKernel.Embeddings;
-
-using OnxAdmin.API.Factories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,41 +6,20 @@ builder.AddServiceDefaults();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
-
-builder.Services.AddTransient<ITopicSentryAgent, TopicSentryAgent>();
-
-builder.Services.ConfigureOptions<AnthropicOptionsSetup>();
-builder.Services.AddTransient<IAnthropicApiClient, AnthropicApiClient>(sp =>
+builder.Services.AddProblemDetails();
+builder.Services.ConfigureHttpJsonOptions(o =>
 {
-  var options = sp.GetRequiredService<IOptions<AnthropicOptions>>().Value;
-  var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-  var httpClient = httpClientFactory.CreateClient();
-  return new AnthropicApiClient(options.Key, httpClient);
+  o.SerializerOptions.Converters.Add(new ContentConverter());
 });
-builder.Services.AddScoped<IChatService, AnthropicChatService>();
 
-builder.Services.AddScoped<IPageFactory, PageFactory>();
-builder.Services.AddScoped<IOnspringAdmin, OnspringAdmin>();
-builder.Services.ConfigureOptions<OnspringOptionsSetup>();
-builder.Services.AddScoped<IOnspringService, OnspringService>();
+builder.Services.AddSingleton<Instrumentation>();
+builder.Services
+  .AddOpenTelemetry()
+  .WithTracing(tracing => tracing.AddSource(Instrumentation.ActivitySourceName));
 
-builder.Services.ConfigureOptions<ChromaOptionsSetup>();
-builder.Services.AddTransient<IMemoryStore>(sp =>
-{
-  var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
-  var options = sp.GetRequiredService<IOptions<ChromaOptions>>().Value;
-  var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-  return new ChromaMemoryStore(httpClient, options.BaseUrl, loggerFactory);
-});
-builder.Services.ConfigureOptions<OllamaTextEmbeddingOptionsSetup>();
-builder.Services.AddTransient<ITextEmbeddingGenerationService, OllamaTextEmbeddingGeneration>(sp =>
-{
-  var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
-  var options = sp.GetRequiredService<IOptions<OllamaTextEmbeddingOptions>>().Value;
-  var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-  return new OllamaTextEmbeddingGeneration(options.ModelId, options.BaseUrl, httpClient, loggerFactory);
-});
-builder.Services.AddTransient<ISemanticTextMemory, SemanticTextMemory>();
+builder.Services.AddAgents();
+builder.Services.AddAnthropic();
+builder.Services.AddMemory();
 
 if (builder.Configuration.GetValue("GenerateEmbeddings", false))
 {
@@ -58,15 +28,20 @@ if (builder.Configuration.GetValue("GenerateEmbeddings", false))
 
 var app = builder.Build();
 
+app.UseStatusCodePages();
+
+app.UseMiddleware<ErrorMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
   app.UseSwaggerUI();
 }
 
-app.MapPost("/generate-response", ([AsParameters] GenerateResponseRequest request) =>
+app.MapPost("/generate-response", async ([AsParameters] GenerateResponseRequest request) =>
 {
-  return Results.Ok(new { message = "Hello, World!" });
+  var message = await request.ChatService.GenerateResponseAsync(request.GenerateResponseDto.Conversation);
+  return Results.Ok(new { message });
 });
 
 app.UseHttpsRedirection();

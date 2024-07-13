@@ -1,8 +1,19 @@
-namespace OnxAdmin.API.Requests;
+using System.ComponentModel.DataAnnotations;
 
-record GenerateResponseDto(string Message);
+namespace OnxAdmin.API.Requests;
 
 record GenerateResponseRequest(
   [FromBody] GenerateResponseDto GenerateResponseDto,
   [FromServices] IChatService ChatService
 );
+
+record GenerateResponseDto(List<Message> Conversation) : IValidatableObject
+{
+  public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+  {
+    if (Conversation.Count == 0)
+    {
+      yield return new ValidationResult("Conversation must contain at least one message.", [nameof(Conversation)]);
+    }
+  }
+}

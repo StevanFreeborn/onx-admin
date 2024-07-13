@@ -1,6 +1,6 @@
 
 
-namespace OnxAdmin.API.Agents.TopicSentry;
+namespace OnxAdmin.API.Agents;
 
 interface ITopicSentryAgent
 {
@@ -9,18 +9,25 @@ interface ITopicSentryAgent
 
 class TopicSentryAgent(
   IAnthropicApiClient client,
-  ILogger<TopicSentryAgent> logger
+  ILogger<TopicSentryAgent> logger,
+  Instrumentation instrumentation
 ) : ITopicSentryAgent
 {
   private readonly IAnthropicApiClient _client = client;
   private readonly ILogger<TopicSentryAgent> _logger = logger;
+  private readonly ActivitySource _activitySource = instrumentation.ActivitySource;
+  private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
+
 
   public async Task<TopicResponse> ExecuteTaskAsync(string input)
   {
+    using var activity = _activitySource.StartActivity(nameof(ExecuteTaskAsync));
+    activity?.SetTag("input", input);
+
     var prompt = GeneratePrompt(input);
     var request = new MessageRequest(
       AnthropicModels.Claude35Sonnet,
-      [new(MessageRole.User, [new TextContent(input)])]
+      [new(MessageRole.User, [new TextContent(prompt)])]
     );
 
     var response = await _client.CreateMessageAsync(request);
@@ -37,7 +44,7 @@ class TopicSentryAgent(
       topicResponse = JSON.Parse<TopicResponse>(text, _logger);
     }
 
-    _logger.LogInformation("Topic Sentry response: {Response}", topicResponse);
+    activity?.SetTag("output", JsonSerializer.Serialize(topicResponse, _jsonSerializerOptions));
 
     return topicResponse;
   }
@@ -79,10 +86,10 @@ class TopicSentryAgent(
 
 record TopicResponse
 {
-  public bool IsAboutOnspring { get; init; } = false;
-  public string Reasoning { get; init; } = string.Empty;
+  public bool IsAboutOnspring { get; init; }
+  public string Reasoning { get; init; }
 
-  public TopicResponse() { }
+  public TopicResponse() : this(false, string.Empty) { }
 
   public TopicResponse(bool isAboutOnspring, string reasoning)
   {

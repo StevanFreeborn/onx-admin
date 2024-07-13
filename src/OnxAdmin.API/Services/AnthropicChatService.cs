@@ -1,25 +1,27 @@
-
-using System.Diagnostics;
-
 namespace OnxAdmin.API.Services;
 
 class AnthropicChatService(
-  IAnthropicApiClient client,
   ILogger<AnthropicChatService> logger,
-  ITopicSentryAgent topicSentry
+  ITopicSentryAgent topicSentry,
+  IOnspringResearcherAgent onspringResearcher,
+  IOnspringAdministratorAgent onspringAdministrator
 ) : IChatService
 {
-  private readonly IAnthropicApiClient _client = client;
   private readonly ILogger<AnthropicChatService> _logger = logger;
   private readonly ITopicSentryAgent _topicSentry = topicSentry;
+  private readonly IOnspringResearcherAgent _onspringResearcher = onspringResearcher;
+  private readonly IOnspringAdministratorAgent _onspringAdministrator = onspringAdministrator;
 
-  public async Task GenerateResponseAsync(List<Message> messages)
+  public async Task<Message> GenerateResponseAsync(List<Message> messages)
   {
-    var mostRecentMessage = messages[^1];
-    var mostRecentContent = mostRecentMessage.Content.OfType<TextContent>().FirstOrDefault()?.Text ?? string.Empty;
-
-    var topicResponse = await _topicSentry.ExecuteTaskAsync(mostRecentContent);
-
-    throw new NotImplementedException();
+    var messagesToReturn = messages.ToList();
+    var previousMessages = messagesToReturn[..^1];
+    var mostRecentMessage = messagesToReturn[^1];
+    var mostRecentMessageText = mostRecentMessage.GetText();
+    var topicResponse = await _topicSentry.ExecuteTaskAsync(mostRecentMessageText);
+    var knowledge = topicResponse.IsAboutOnspring
+      ? await _onspringResearcher.ExecuteTaskAsync(mostRecentMessageText)
+      : [];
+    return await _onspringAdministrator.ExecuteTaskAsync(mostRecentMessageText, previousMessages, knowledge);
   }
 }

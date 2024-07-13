@@ -23,5 +23,30 @@
       "webRoot": "${workspaceFolder}/src/OnxAdmin.Client",
       "url": "https://localhost:4000"
     },
+    {
+      "name": "OnxAdmin.API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/OnxAdmin.API/bin/Debug/net8.0/OnxAdmin.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/OnxAdmin.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/Views"
+      }
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    },
   ]
 }
