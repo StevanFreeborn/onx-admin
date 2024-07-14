@@ -3,7 +3,7 @@
 
 namespace OnxAdmin.API.Extensions;
 
-public static class ServiceCollectionExtensions
+static class ServiceCollectionExtensions
 {
   public static IServiceCollection AddAgents(this IServiceCollection services)
   {

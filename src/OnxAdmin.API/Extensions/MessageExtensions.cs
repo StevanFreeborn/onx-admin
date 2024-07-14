@@ -1,6 +1,6 @@
 namespace OnxAdmin.API.Extensions;
 
-public static class MessageExtensions
+static class MessageExtensions
 {
   public static string GetText(this Message message)
   {

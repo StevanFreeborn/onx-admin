@@ -2,7 +2,12 @@ namespace OnxAdmin.API.Json;
 
 static class JSON
 {
-  private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
+  public static readonly JsonSerializerOptions Options = new()
+  {
+    Converters = { new EventDataConverter(), new ContentConverter(), new DeltaConverter() },
+    PropertyNameCaseInsensitive = true,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+  };
 
   public static T Parse<T>(string json, ILogger? logger = null) where T : new()
   {

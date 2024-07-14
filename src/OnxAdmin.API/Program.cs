@@ -12,6 +12,8 @@ builder.Services.ConfigureHttpJsonOptions(o =>
   o.SerializerOptions.Converters.Add(new ContentConverter());
   o.SerializerOptions.Converters.Add(new EventDataConverter());
   o.SerializerOptions.Converters.Add(new DeltaConverter());
+  o.SerializerOptions.PropertyNameCaseInsensitive = true;
+  o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
 builder.Services.AddSingleton<Instrumentation>();
@@ -40,9 +42,18 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI();
 }
 
-app.MapPost("/generate-response", ([AsParameters] GenerateResponseRequest request) =>
+app.MapPost("/generate-response", async ([AsParameters] GenerateResponseRequest request) =>
 {
-  return request.ChatService.GenerateResponseAsync(request.GenerateResponseDto.Conversation);
+  var events = request.ChatService.GenerateResponseAsync(request.GenerateResponseDto.Conversation);
+
+  request.Context.Response.Headers.Append("Content-Type", "text/event-stream");
+
+  await foreach (var e in events)
+  {
+    await request.Context.Response.WriteAsync($"{e.ToJson()}\n");
+    await request.Context.Response.Body.FlushAsync();
+    await Task.Delay(100);
+  }
 });
 
 app.UseHttpsRedirection();

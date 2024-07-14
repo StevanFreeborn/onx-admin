@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace OnxAdmin.API.Requests;
 
 record GenerateResponseRequest(
+  HttpContext Context,
   [FromBody] GenerateResponseDto GenerateResponseDto,
   [FromServices] IChatService ChatService
 );

@@ -14,13 +14,12 @@ class OnspringAdministratorAgent(
   private readonly IAnthropicApiClient _anthropicApiClient = anthropicApiClient;
   private readonly ILogger<OnspringAdministratorAgent> _logger = logger;
   private readonly ActivitySource _activitySource = instrumentation.ActivitySource;
-  private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true, Converters = { new ContentConverter() } };
 
   public async IAsyncEnumerable<EventData> ExecuteTaskAsync(string mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge)
   {
     using var activity = _activitySource.StartActivity(nameof(ExecuteTaskAsync));
-    activity?.SetTag("input.previousMessages", JsonSerializer.Serialize(previousMessages, _jsonSerializerOptions));
-    activity?.SetTag("input.knowledge", JsonSerializer.Serialize(knowledge, _jsonSerializerOptions));
+    activity?.SetTag("input.previousMessages", JsonSerializer.Serialize(previousMessages, JSON.Options));
+    activity?.SetTag("input.knowledge", JsonSerializer.Serialize(knowledge, JSON.Options));
     activity?.SetTag("input.mostRecentMessage", mostRecentMessage);
 
     var prompt = GeneratePrompt(mostRecentMessage, knowledge);
@@ -39,7 +38,7 @@ class OnspringAdministratorAgent(
     {
       if (e.Data is MessageCompleteEventData msgCompleteData)
       {
-        activity?.SetTag("output", JsonSerializer.Serialize(msgCompleteData.Message, _jsonSerializerOptions));
+        activity?.SetTag("output", JsonSerializer.Serialize(msgCompleteData.Message, JSON.Options));
       }
 
       yield return e.Data;

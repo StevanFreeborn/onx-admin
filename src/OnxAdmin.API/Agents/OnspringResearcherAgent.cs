@@ -14,7 +14,6 @@ class OnspringResearcherAgent(
 {
   private readonly ISemanticTextMemory _memory = memory;
   private readonly ActivitySource _activitySource = instrumentation.ActivitySource;
-  private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
 
   public async Task<List<Finding>> ExecuteTaskAsync(string input)
   {
@@ -40,7 +39,7 @@ class OnspringResearcherAgent(
       findings.Add(new Finding(content, source));
     }
 
-    activity?.SetTag("output", JsonSerializer.Serialize(memoryResults, _jsonSerializerOptions));
+    activity?.SetTag("output", JsonSerializer.Serialize(memoryResults, JSON.Options));
 
     return findings;
   }

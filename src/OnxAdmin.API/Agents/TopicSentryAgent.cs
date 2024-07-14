@@ -16,8 +16,6 @@ class TopicSentryAgent(
   private readonly IAnthropicApiClient _client = client;
   private readonly ILogger<TopicSentryAgent> _logger = logger;
   private readonly ActivitySource _activitySource = instrumentation.ActivitySource;
-  private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };
-
 
   public async Task<TopicResponse> ExecuteTaskAsync(string input)
   {
@@ -44,7 +42,7 @@ class TopicSentryAgent(
       topicResponse = JSON.Parse<TopicResponse>(text, _logger);
     }
 
-    activity?.SetTag("output", JsonSerializer.Serialize(topicResponse, _jsonSerializerOptions));
+    activity?.SetTag("output", JsonSerializer.Serialize(topicResponse, JSON.Options));
 
     return topicResponse;
   }
