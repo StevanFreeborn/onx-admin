@@ -2,7 +2,7 @@ namespace OnxAdmin.API.Agents;
 
 interface IOnspringAdministratorAgent
 {
-  Task<Message> ExecuteTaskAsync(string mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge);
+  IAsyncEnumerable<EventData> ExecuteTaskAsync(string mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge);
 }
 
 class OnspringAdministratorAgent(
@@ -16,7 +16,7 @@ class OnspringAdministratorAgent(
   private readonly ActivitySource _activitySource = instrumentation.ActivitySource;
   private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true, Converters = { new ContentConverter() } };
 
-  public async Task<Message> ExecuteTaskAsync(string mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge)
+  public async IAsyncEnumerable<EventData> ExecuteTaskAsync(string mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge)
   {
     using var activity = _activitySource.StartActivity(nameof(ExecuteTaskAsync));
     activity?.SetTag("input.previousMessages", JsonSerializer.Serialize(previousMessages, _jsonSerializerOptions));
@@ -24,7 +24,7 @@ class OnspringAdministratorAgent(
     activity?.SetTag("input.mostRecentMessage", mostRecentMessage);
 
     var prompt = GeneratePrompt(mostRecentMessage, knowledge);
-    var request = new MessageRequest(
+    var request = new StreamMessageRequest(
       AnthropicModels.Claude35Sonnet,
       [
         ..previousMessages,
@@ -33,27 +33,17 @@ class OnspringAdministratorAgent(
       system: SystemMessage
     );
 
-    var result = await _anthropicApiClient.CreateMessageAsync(request);
+    var events = _anthropicApiClient.CreateMessageAsync(request);
 
-    Message msg;
-
-    if (result.IsFailure)
+    await foreach (var e in events)
     {
-      _logger.LogError("Failed to generate response: {Error}", result.Error);
+      if (e.Data is MessageCompleteEventData msgCompleteData)
+      {
+        activity?.SetTag("output", JsonSerializer.Serialize(msgCompleteData.Message, _jsonSerializerOptions));
+      }
 
-      msg = new Message(
-        MessageRole.Assistant,
-        [new TextContent("I'm sorry, I'm having trouble generating a response right now.")]
-      );
+      yield return e.Data;
     }
-    else
-    {
-      msg = new Message(result.Value.Role, result.Value.Content);
-    }
-
-    activity?.SetTag("output", msg.GetText());
-
-    return msg;
   }
 
   private static string GeneratePrompt(string mostRecentMessage, List<Finding> knowledge)

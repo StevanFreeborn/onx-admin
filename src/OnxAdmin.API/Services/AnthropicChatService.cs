@@ -12,7 +12,7 @@ class AnthropicChatService(
   private readonly IOnspringResearcherAgent _onspringResearcher = onspringResearcher;
   private readonly IOnspringAdministratorAgent _onspringAdministrator = onspringAdministrator;
 
-  public async Task<Message> GenerateResponseAsync(List<Message> messages)
+  public async IAsyncEnumerable<EventData> GenerateResponseAsync(List<Message> messages)
   {
     var messagesToReturn = messages.ToList();
     var previousMessages = messagesToReturn[..^1];
@@ -22,6 +22,11 @@ class AnthropicChatService(
     var knowledge = topicResponse.IsAboutOnspring
       ? await _onspringResearcher.ExecuteTaskAsync(mostRecentMessageText)
       : [];
-    return await _onspringAdministrator.ExecuteTaskAsync(mostRecentMessageText, previousMessages, knowledge);
+    var data = _onspringAdministrator.ExecuteTaskAsync(mostRecentMessageText, previousMessages, knowledge);
+
+    await foreach (var d in data)
+    {
+      yield return d;
+    }
   }
 }

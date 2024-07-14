@@ -10,6 +10,8 @@ builder.Services.AddProblemDetails();
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
   o.SerializerOptions.Converters.Add(new ContentConverter());
+  o.SerializerOptions.Converters.Add(new EventDataConverter());
+  o.SerializerOptions.Converters.Add(new DeltaConverter());
 });
 
 builder.Services.AddSingleton<Instrumentation>();
@@ -38,10 +40,9 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI();
 }
 
-app.MapPost("/generate-response", async ([AsParameters] GenerateResponseRequest request) =>
+app.MapPost("/generate-response", ([AsParameters] GenerateResponseRequest request) =>
 {
-  var message = await request.ChatService.GenerateResponseAsync(request.GenerateResponseDto.Conversation);
-  return Results.Ok(new { message });
+  return request.ChatService.GenerateResponseAsync(request.GenerateResponseDto.Conversation);
 });
 
 app.UseHttpsRedirection();
