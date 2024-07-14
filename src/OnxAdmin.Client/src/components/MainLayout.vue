@@ -38,6 +38,9 @@
       padding: 1rem;
 
       .main-content {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
         flex: 1;
       }
 
