@@ -10,9 +10,13 @@
   const chatService = new ChatService();
 
   async function handleSubmit() {
+    // TODO: show the user that the LLM is thinking
+
     if (!promptText.value) {
       return;
     }
+
+    promptText.value = '';
 
     conversation.value.push({
       role: 'user',
@@ -24,10 +28,24 @@
       ],
     });
 
-    const events = chatService.generateResponse(conversation.value);
+    try {
+      const events = chatService.generateResponse(conversation.value);
 
-    for await (const event of events) {
-      console.log(event);
+      // TODO: Show the user the LLM is finished thinking
+
+      for await (const event of events) {
+        // TODO: Handle the event
+        // 1. We want to display the text that the LLM is writing
+        // as it is being received
+        // 2. We need to scroll the messages container to the bottom
+        // 3. We want to add the message complete to the conversation
+        // 4. Reset the current message text
+        console.log(event);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      }
     }
   }
 
