@@ -181,6 +181,7 @@
         </div>
       </div>
     </div>
+    <!-- TODO: Support file uploads -->
     <div class="input-container">
       <div ref="promptWrapper" class="prompt-wrapper">
         <label for="prompt" class="sr-only">Prompt</label>
