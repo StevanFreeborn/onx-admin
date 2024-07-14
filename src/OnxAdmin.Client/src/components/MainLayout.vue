@@ -4,7 +4,8 @@
 
 <template>
   <div class="layout-container">
-    <aside></aside>
+    <!-- TODO: Implement a sidebar -->
+    <!-- <aside></aside> -->
     <main>
       <header>
         <h1>OnxAdmin</h1>
@@ -36,12 +37,14 @@
       flex-direction: column;
       flex: 1;
       padding: 1rem;
+      max-width: 100%;
 
       .main-content {
         display: flex;
         align-items: center;
         flex-direction: column;
         flex: 1;
+        height: 0;
       }
 
       & footer {

@@ -92,3 +92,43 @@ body {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* style message html parsed from markdown */
+.messages-container {
+  & pre {
+    overflow-x: auto;
+    background-color: var(--secondary-background-color);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  & code:not(pre code) {
+    background-color: var(--secondary-background-color);
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+  }
+
+  & table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  & th,
+  & td {
+    border: 1px solid #212121;
+    padding: 0.5rem;
+    text-align: left;
+  }
+
+  & th {
+    background-color: #212121;
+  }
+
+  & tr:nth-child(odd) {
+    background-color: var(--black);
+  }
+
+  & tr:nth-child(even) {
+    background-color: #212121;
+  }
+}
