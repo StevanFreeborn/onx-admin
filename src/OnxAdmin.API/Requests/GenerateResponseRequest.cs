@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace OnxAdmin.API.Requests;
 
 record GenerateResponseRequest(

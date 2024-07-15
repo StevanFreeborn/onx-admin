@@ -23,7 +23,7 @@ export class ChatService implements IChatService {
     }
   }
 
-  async *getStream(response: Response) {
+  private async *getStream(response: Response) {
     if (response.body === null) {
       return;
     }

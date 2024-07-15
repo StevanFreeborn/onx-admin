@@ -23,6 +23,7 @@ builder.Services
 builder.Services.AddAgents();
 builder.Services.AddAnthropic();
 builder.Services.AddMemory();
+builder.Services.AddAttachmentService();
 
 if (builder.Configuration.GetValue("GenerateEmbeddings", false))
 {
@@ -56,11 +57,26 @@ app.MapPost("/generate-response", async ([AsParameters] GenerateResponseRequest 
 });
 
 app
-  .MapPost("/attachments", (IFormFile attachment) =>
+  .MapPost("/attachments", async ([AsParameters] AddAttachmentRequest request) =>
   {
-    return Results.Ok(new { Id = Guid.NewGuid() });
+    if (request.Attachment is null)
+    {
+      return Results.ValidationProblem(new Dictionary<string, string[]>
+      {
+        { nameof(request.Attachment), ["Attachment is required."] }
+      });
+    }
+
+    var id = await request.AttachmentService.AddAttachmentAsync(request.Attachment);
+    return Results.Ok(new { id });
   })
   .DisableAntiforgery();
+
+app.MapDelete("/attachments/{AttachmentId}", async ([AsParameters] DeleteAttachmentRequest request) =>
+{
+  var result = await request.AttachmentService.RemoveAttachmentAsync(request.AttachmentId);
+  return result ? Results.NoContent() : Results.Problem(statusCode: 500, detail: "Failed to remove attachment.");
+});
 
 app.UseHttpsRedirection();
 app.UseCors(static builder =>

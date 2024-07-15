@@ -60,4 +60,11 @@ static class ServiceCollectionExtensions
     services.AddTransient<ISemanticTextMemory, SemanticTextMemory>();
     return services;
   }
+
+  public static IServiceCollection AddAttachmentService(this IServiceCollection services)
+  {
+    services.AddScoped<IFileSystem, FileSystem>();
+    services.AddScoped<IAttachmentService, FileSystemAttachmentService>();
+    return services;
+  }
 }

@@ -231,8 +231,15 @@
     }
   }
 
-  function handleRemoveFileButtonClick(index: number) {
-    attachments.value.splice(index, 1);
+  async function handleRemoveFileButtonClick(id: string) {
+    const result = await attachmentService.removeAttachment(id);
+
+    if (result === false) {
+      alert('Failed to remove attachment');
+      return;
+    }
+
+    attachments.value = attachments.value.filter(a => a.id !== id);
   }
 </script>
 
@@ -300,7 +307,7 @@
           <button
             v-if="attachment.uploadProgress === 100"
             type="button"
-            @click="() => handleRemoveFileButtonClick(index)"
+            @click="() => handleRemoveFileButtonClick(attachment.id)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
               <path

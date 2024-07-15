@@ -11,6 +11,7 @@ global using OnxAdmin.API.Middleware;
 global using OnxAdmin.API.Diagnostics;
 
 global using System.Text;
+global using System.IO.Abstractions;
 
 global using AnthropicClient;
 global using AnthropicClient.Models;
@@ -38,3 +39,5 @@ global using OnxAdmin.API.Factories;
 global using System.Net;
 
 global using System.Diagnostics;
+
+global using System.ComponentModel.DataAnnotations;

@@ -2,6 +2,7 @@ import type { AddAttachmentEvent } from '@/types';
 
 export interface IAttachmentService {
   addAttachment: (attachment: File) => AsyncIterable<AddAttachmentEvent>;
+  removeAttachment: (id: string) => Promise<boolean>;
 }
 
 export class AttachmentService implements IAttachmentService {
@@ -48,5 +49,12 @@ export class AttachmentService implements IAttachmentService {
       yield { type: 'add_attachment_progress', progress };
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+  }
+
+  async removeAttachment(id: string) {
+    const response = await fetch(`/api/attachments/${id}`, {
+      method: 'DELETE',
+    });
+    return response.ok;
   }
 }

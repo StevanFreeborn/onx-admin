@@ -9,10 +9,12 @@ interface IOnspringResearcherAgent
 
 class OnspringResearcherAgent(
   ISemanticTextMemory memory,
-  Instrumentation instrumentation
+  Instrumentation instrumentation,
+  IOptions<OnspringOptions> options
 ) : IOnspringResearcherAgent
 {
   private readonly ISemanticTextMemory _memory = memory;
+  private readonly OnspringOptions _options = options.Value;
   private readonly ActivitySource _activitySource = instrumentation.ActivitySource;
 
   public async Task<List<Finding>> ExecuteTaskAsync(string input)
@@ -34,7 +36,8 @@ class OnspringResearcherAgent(
     await foreach (var result in results)
     {
       memoryResults.Add(result);
-      var source = result.Metadata.AdditionalMetadata;
+      var sourcePath = result.Metadata.AdditionalMetadata;
+      var source = _options.InstanceUrl + sourcePath;
       var content = result.Metadata.Text.Replace("search_document: ", string.Empty);
       findings.Add(new Finding(content, source));
     }
