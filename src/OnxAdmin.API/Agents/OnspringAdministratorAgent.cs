@@ -26,7 +26,7 @@ class OnspringAdministratorAgent(
     var request = new StreamMessageRequest(
       AnthropicModels.Claude35Sonnet,
       [
-        ..previousMessages,
+        .. previousMessages,
         new(MessageRole.User, [new TextContent(prompt)])
       ],
       system: SystemMessage
