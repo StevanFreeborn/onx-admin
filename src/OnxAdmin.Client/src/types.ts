@@ -9,6 +9,36 @@ export type EventData =
   | ContentStopEventData
   | MessageCompleteEventData;
 
+export type AddAttachmentEvent =
+  | AddAttachmentCompleteEvent
+  | AddAttachmentProgressEvent
+  | AddAttachmentErrorEvent;
+
+export type Message = {
+  role: string;
+  content: Content[];
+};
+
+export type Attachment = {
+  id: string;
+  uploadProgress: number;
+  file: File;
+};
+
+type AddAttachmentCompleteEvent = {
+  type: 'add_attachment_complete';
+  id: string;
+};
+
+type AddAttachmentProgressEvent = {
+  type: 'add_attachment_progress';
+  progress: number;
+};
+
+type AddAttachmentErrorEvent = {
+  type: 'add_attachment_error';
+};
+
 type PingEventData = {
   type: 'ping';
 };
@@ -99,11 +129,6 @@ type AnthropicHeaders = {
 type AnthropicUsage = {
   input_tokens: number;
   output_tokens: number;
-};
-
-export type Message = {
-  role: string;
-  content: Content[];
 };
 
 type Content = TextContent | ImageContent | ToolUseContent | ToolResultContent;

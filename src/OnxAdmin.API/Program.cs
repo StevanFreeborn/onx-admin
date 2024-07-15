@@ -1,4 +1,3 @@
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
@@ -55,6 +54,13 @@ app.MapPost("/generate-response", async ([AsParameters] GenerateResponseRequest 
     await Task.Delay(100);
   }
 });
+
+app
+  .MapPost("/attachments", (IFormFile attachment) =>
+  {
+    return Results.Ok(new { Id = Guid.NewGuid() });
+  })
+  .DisableAntiforgery();
 
 app.UseHttpsRedirection();
 app.UseCors(static builder =>

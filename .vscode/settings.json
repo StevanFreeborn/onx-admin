@@ -6,6 +6,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "dotnet.defaultSolution": "src/server/Server.sln",
   "cSpell.words": [
+    "Antiforgery",
     "Chunker",
     "Codeblaze",
     "Hardline",

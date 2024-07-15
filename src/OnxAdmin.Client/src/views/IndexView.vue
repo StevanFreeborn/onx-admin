@@ -1,21 +1,43 @@
 <script setup lang="ts">
-  import { computed, ref, nextTick } from 'vue';
+  import { computed, ref, nextTick, onMounted } from 'vue';
   import { ChatService } from '@/services/chatService';
-  import type { Message } from '@/types';
+  import type { Attachment, Message } from '@/types';
   import { marked } from 'marked';
+  import { AttachmentService } from '@/services/attachmentService.js';
 
   const prompt = ref<HTMLTextAreaElement | null>(null);
   const promptWrapper = ref<HTMLDivElement | null>(null);
   const messagesContainer = ref<HTMLDivElement | null>(null);
+  const fileInput = ref<HTMLInputElement | null>(null);
   const promptText = ref('');
   const llmResponse = ref('');
   const llmResponseHTML = computed(() => parseMarkdownToHTML(llmResponse.value));
   const isThinking = ref(false);
+  const isUploading = ref(false);
   const conversation = ref<Message[]>([]);
-  const chatService = new ChatService();
+  const attachments = ref<Attachment[]>([]);
 
-  function parseMarkdownToHTML(text: string): string {
-    return marked.parse(text);
+  const chatService = new ChatService();
+  const attachmentService = new AttachmentService();
+
+  onMounted(() => {
+    if (prompt.value === null) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        if (entry.target === prompt.value) {
+          resizePrompt();
+        }
+      }
+    });
+
+    resizeObserver.observe(prompt.value);
+  });
+
+  function parseMarkdownToHTML(text: string) {
+    return marked.parse(text) as string;
   }
 
   function scrollToBottom() {
@@ -54,6 +76,13 @@
     prompt.value.style.height = 'auto';
     prompt.value.style.overflow = 'hidden';
     promptText.value = '';
+    attachments.value = [];
+
+    if (fileInput.value === null) {
+      return;
+    }
+
+    fileInput.value.value = '';
   }
 
   function resizePrompt() {
@@ -137,6 +166,74 @@
       }
     }
   }
+
+  async function handlePromptKeydown(e: KeyboardEvent) {
+    if (e.key == 'Enter' && e.ctrlKey) {
+      await handleSubmit();
+    }
+  }
+
+  function handleAttachmentButtonClick() {
+    if (fileInput.value === null) {
+      return;
+    }
+
+    fileInput.value.click();
+  }
+
+  async function handleFileInputChange() {
+    isUploading.value = true;
+
+    try {
+      if (fileInput.value === null || fileInput.value.files === null) {
+        return;
+      }
+
+      const addFilePromises = Array.from(fileInput.value.files).map(async file => {
+        attachments.value.push({
+          id: '',
+          uploadProgress: 0,
+          file: file,
+        });
+
+        const events = attachmentService.addAttachment(file);
+
+        for await (const e of events) {
+          const attachment = attachments.value.find(a => a.file === file);
+
+          switch (e.type) {
+            case 'add_attachment_progress':
+              if (attachment) {
+                attachment.uploadProgress = e.progress;
+              }
+              break;
+            case 'add_attachment_complete':
+              if (attachment) {
+                attachment.uploadProgress = 100;
+                attachment.id = e.id;
+              }
+              break;
+            default:
+              if (attachment) {
+                attachments.value.splice(attachments.value.indexOf(attachment), 1);
+              }
+              alert('Failed to add attachment');
+              break;
+          }
+        }
+      });
+
+      fileInput.value.value = '';
+
+      await Promise.all(addFilePromises);
+    } finally {
+      isUploading.value = false;
+    }
+  }
+
+  function handleRemoveFileButtonClick(index: number) {
+    attachments.value.splice(index, 1);
+  }
 </script>
 
 <template>
@@ -183,7 +280,62 @@
     </div>
     <!-- TODO: Support file uploads -->
     <div class="input-container">
+      <div v-if="attachments.length > 0" class="attachment-wrapper">
+        <div
+          v-for="[index, attachment] in attachments.entries()"
+          v-bind:key="index"
+          class="attachment"
+        >
+          <div v-if="attachment.uploadProgress < 100" class="progress">
+            <div class="bar" :style="{ width: `${attachment.uploadProgress}%` }"></div>
+          </div>
+          <div class="name-container">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor">
+              <path
+                d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128z"
+              />
+            </svg>
+            <p :title="`${attachment.file.name}`">{{ attachment.file.name }}</p>
+          </div>
+          <button
+            v-if="attachment.uploadProgress === 100"
+            type="button"
+            @click="() => handleRemoveFileButtonClick(index)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
+              <path
+                d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"
+              />
+            </svg>
+            <span class="sr-only">Remove Attachment</span>
+          </button>
+        </div>
+      </div>
       <div ref="promptWrapper" class="prompt-wrapper">
+        <label for="fileInput" class="sr-only">File Input</label>
+        <input
+          ref="fileInput"
+          type="file"
+          multiple
+          style="display: none"
+          id="fileInput"
+          name="fileInput"
+          @change="handleFileInputChange"
+          :disabled="isThinking || isUploading"
+        />
+        <button
+          class="attach-file-button"
+          type="button"
+          @click="handleAttachmentButtonClick"
+          :disabled="isThinking || isUploading"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor">
+            <path
+              d="M364.2 83.8c-24.4-24.4-64-24.4-88.4 0l-184 184c-42.1 42.1-42.1 110.3 0 152.4s110.3 42.1 152.4 0l152-152c10.9-10.9 28.7-10.9 39.6 0s10.9 28.7 0 39.6l-152 152c-64 64-167.6 64-231.6 0s-64-167.6 0-231.6l184-184c46.3-46.3 121.3-46.3 167.6 0s46.3 121.3 0 167.6l-176 176c-28.6 28.6-75 28.6-103.6 0s-28.6-75 0-103.6l144-144c10.9-10.9 28.7-10.9 39.6 0s10.9 28.7 0 39.6l-144 144c-6.7 6.7-6.7 17.7 0 24.4s17.7 6.7 24.4 0l176-176c24.4-24.4 24.4-64 0-88.4z"
+            />
+          </svg>
+          <span class="sr-only">Attach File</span>
+        </button>
         <label for="prompt" class="sr-only">Prompt</label>
         <textarea
           ref="prompt"
@@ -196,8 +348,15 @@
           @input="handlePromptInput"
           @focus="handlePromptFocus"
           @blur="handlePromptBlur"
+          @keydown="handlePromptKeydown"
+          :disabled="isThinking"
         ></textarea>
-        <button type="button" class="send-button" @click="handleSubmit">
+        <button
+          type="button"
+          class="send-button"
+          @click="handleSubmit"
+          :disabled="isThinking || isUploading"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
             <path
               d="M498.1 5.6c10.1 7 15.4 19.1 13.5 31.2l-64 416c-1.5 9.7-7.4 18.2-16 23s-18.9 5.4-28 1.6L284 427.7l-68.5 74.1c-8.9 9.7-22.9 12.9-35.2 8.1S160 493.2 160 480V396.4c0-4 1.5-7.8 4.2-10.7L331.8 202.8c5.8-6.3 5.6-16-.4-22s-15.7-6.4-22-.7L106 360.8 17.7 316.6C7.1 311.3 .3 300.7 0 288.9s5.9-22.8 16.1-28.7l448-256c10.7-6.1 23.9-5.5 34 1.4z"
@@ -212,6 +371,7 @@
 
 <style scoped>
   .container {
+    --user-input-color: #2f2f2f;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -238,7 +398,7 @@
           padding-left: 2rem;
 
           & .message-wrapper {
-            background-color: #2f2f2f;
+            background-color: var(--user-input-color);
             color: var(--white);
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -332,20 +492,93 @@
       padding: 1rem;
       width: 100%;
       justify-content: center;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      & .attachment-wrapper {
+        display: flex;
+        align-items: flex-end;
+        width: 100%;
+        gap: 1rem;
+        overflow-x: auto;
+        scrollbar-color: var(--user-input-color) var(--black);
+        scrollbar-width: thin;
+        padding-top: 1rem;
+        padding-bottom: 0.5rem;
+
+        & .attachment {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          padding: 0.5rem;
+          background-color: var(--user-input-color);
+          border-radius: 0.5rem;
+          position: relative;
+          max-width: 200px;
+          height: max-content;
+
+          .name-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            & p {
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+          }
+
+          .progress {
+            background-color: var(--user-input-color);
+            border-radius: 0.25rem;
+            height: 0.25rem;
+            width: 100%;
+
+            & .bar {
+              background-color: var(--background-color);
+              border-radius: 0.25rem;
+              height: 100%;
+            }
+          }
+
+          & button {
+            position: absolute;
+            top: -1rem;
+            right: -1rem;
+            background-color: transparent;
+            border: none;
+            color: var(--white);
+            cursor: pointer;
+            padding: 0.5rem;
+            display: none;
+          }
+
+          &:hover button {
+            display: flex;
+          }
+
+          & svg {
+            flex-shrink: 0;
+            width: 1rem;
+            height: 1rem;
+          }
+        }
+      }
 
       & .prompt-wrapper {
         display: flex;
         align-items: flex-end;
         width: 100%;
         gap: 1rem;
-        background-color: #2f2f2f;
+        background-color: var(--user-input-color);
         padding: 1rem 2rem;
         border-radius: 0.5rem;
 
         & textarea {
           flex: 1;
           resize: none;
-          background-color: #2f2f2f;
+          background-color: var(--user-input-color);
           color: var(--white);
           border: none;
           font-size: 1rem;
@@ -353,14 +586,15 @@
           line-height: 1.5rem;
           height: 1.5rem;
           max-height: 100%;
-          scrollbar-color: #2f2f2f var(--background-color);
+          scrollbar-color: var(--user-input-color) var(--background-color);
 
           &:focus {
             outline: none;
           }
         }
 
-        .send-button {
+        .send-button,
+        .attach-file-button {
           color: var(--white);
 
           & svg {
