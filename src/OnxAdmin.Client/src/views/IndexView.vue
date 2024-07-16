@@ -133,6 +133,8 @@
       return;
     }
 
+    // TODO: Add any attachments to the conversation
+    // so LLM has a reference to them.
     conversation.value.push({
       role: 'user',
       content: [
@@ -299,7 +301,6 @@
             v-html="`${parseMarkdownToHTML(content.text)}`"
           ></div>
           <details v-if="content.type === 'tool_use'" class="tool">
-            <!-- TODO: Need to present any corresponding tool result -->
             <summary class="tool-use">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
                 <path
