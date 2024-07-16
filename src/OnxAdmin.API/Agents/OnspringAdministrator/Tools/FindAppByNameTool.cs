@@ -35,7 +35,7 @@ class FindAppByNameTool(
 
       var appId = page.Url.Split('/').Last();
 
-      return $"Found app named '{appName}' with ID '{appId}'.";
+      return $"Found app named '{appName}' with ID '{appId}' at URL '{page.Url}'.";
     });
   }
 
