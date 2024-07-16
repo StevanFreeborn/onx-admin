@@ -1,3 +1,5 @@
+using OnxAdmin.API.Agents.OnspringAdministrator;
+
 namespace OnxAdmin.API.Services;
 
 class AnthropicChatService(
@@ -22,7 +24,7 @@ class AnthropicChatService(
     var knowledge = topicResponse.IsAboutOnspring
       ? await _onspringResearcher.ExecuteTaskAsync(mostRecentMessageText)
       : [];
-    var data = _onspringAdministrator.ExecuteTaskAsync(mostRecentMessageText, previousMessages, knowledge);
+    var data = _onspringAdministrator.ExecuteTaskAsync(mostRecentMessage, previousMessages, knowledge);
 
     await foreach (var d in data)
     {

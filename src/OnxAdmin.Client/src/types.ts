@@ -7,7 +7,8 @@ export type EventData =
   | ContentStartEventData
   | ContentDeltaEventData
   | ContentStopEventData
-  | MessageCompleteEventData;
+  | MessageCompleteEventData
+  | ToolResultEventData;
 
 export type AddAttachmentEvent =
   | AddAttachmentCompleteEvent
@@ -92,6 +93,11 @@ type MessageCompleteEventData = {
   headers: AnthropicHeaders;
 };
 
+type ToolResultEventData = {
+  type: 'tool_result';
+  message: Message;
+};
+
 type ContentDelta = TextDelta | JsonDelta;
 
 type TextDelta = {
@@ -156,6 +162,6 @@ type ToolUseContent = {
 
 type ToolResultContent = {
   type: 'tool_result';
-  toolUseId: string;
+  tool_use_id: string;
   content: string;
 };

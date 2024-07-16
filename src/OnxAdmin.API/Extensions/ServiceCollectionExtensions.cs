@@ -7,9 +7,9 @@ static class ServiceCollectionExtensions
 {
   public static IServiceCollection AddAgents(this IServiceCollection services)
   {
-    services.AddSingleton<ITopicSentryAgent, TopicSentryAgent>();
-    services.AddSingleton<IOnspringResearcherAgent, OnspringResearcherAgent>();
-    services.AddSingleton<IOnspringAdministratorAgent, OnspringAdministratorAgent>();
+    services.AddScoped<ITopicSentryAgent, TopicSentryAgent>();
+    services.AddScoped<IOnspringResearcherAgent, OnspringResearcherAgent>();
+    services.AddOnspringAdministratorAgent();
     return services;
   }
 

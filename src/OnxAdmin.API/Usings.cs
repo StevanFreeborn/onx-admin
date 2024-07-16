@@ -21,6 +21,8 @@ global using Microsoft.SemanticKernel.Memory;
 global using Microsoft.SemanticKernel.Text;
 
 global using OnxAdmin.API.Agents;
+global using OnxAdmin.API.Agents.OnspringAdministrator;
+global using OnxAdmin.API.Agents.OnspringAdministrator.Tools;
 global using OnxAdmin.API.Diagnostics;
 global using OnxAdmin.API.Extensions;
 global using OnxAdmin.API.Factories;

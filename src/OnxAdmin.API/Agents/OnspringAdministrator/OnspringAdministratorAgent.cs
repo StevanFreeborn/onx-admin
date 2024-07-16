@@ -1,47 +1,69 @@
-namespace OnxAdmin.API.Agents;
+namespace OnxAdmin.API.Agents.OnspringAdministrator;
 
 interface IOnspringAdministratorAgent
 {
-  IAsyncEnumerable<EventData> ExecuteTaskAsync(string mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge);
+  IAsyncEnumerable<EventData> ExecuteTaskAsync(Message mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge);
 }
 
 class OnspringAdministratorAgent(
   IAnthropicApiClient anthropicApiClient,
   ILogger<OnspringAdministratorAgent> logger,
-  Instrumentation instrumentation
+  Instrumentation instrumentation,
+  IEnumerable<IOnspringAdministratorTool> tools
 ) : IOnspringAdministratorAgent
 {
   private readonly IAnthropicApiClient _anthropicApiClient = anthropicApiClient;
   private readonly ILogger<OnspringAdministratorAgent> _logger = logger;
   private readonly ActivitySource _activitySource = instrumentation.ActivitySource;
+  private readonly List<Tool> _tools = tools.Select(t => t.Create()).ToList();
 
-  public async IAsyncEnumerable<EventData> ExecuteTaskAsync(string mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge)
+  public async IAsyncEnumerable<EventData> ExecuteTaskAsync(Message mostRecentMessage, List<Message> previousMessages, List<Finding> knowledge)
   {
     using var activity = _activitySource.StartActivity(nameof(ExecuteTaskAsync));
     activity?.SetTag("input.previousMessages", JsonSerializer.Serialize(previousMessages, JSON.Options));
     activity?.SetTag("input.knowledge", JsonSerializer.Serialize(knowledge, JSON.Options));
     activity?.SetTag("input.mostRecentMessage", mostRecentMessage);
 
-    var prompt = GeneratePrompt(mostRecentMessage, knowledge);
+    var isToolResult = mostRecentMessage.Content.Any(c => c.Type == ContentType.ToolResult);
+
+    var prompt = GeneratePrompt(mostRecentMessage.GetText(), knowledge);
+    List<Message> requestMessages = [
+      .. previousMessages,
+      isToolResult ? mostRecentMessage : new(MessageRole.User, [new TextContent(prompt)])
+    ];
+
     var request = new StreamMessageRequest(
       AnthropicModels.Claude35Sonnet,
-      [
-        .. previousMessages,
-        new(MessageRole.User, [new TextContent(prompt)])
-      ],
-      system: SystemMessage
+      messages: requestMessages,
+      system: SystemMessage,
+      tools: _tools
     );
 
     var events = _anthropicApiClient.CreateMessageAsync(request);
+    ToolResultContent? toolResultContent = null;
 
     await foreach (var e in events)
     {
       if (e.Data is MessageCompleteEventData msgCompleteData)
       {
+        var toolCall = msgCompleteData.Message.ToolCall;
+
+        if (toolCall is not null)
+        {
+          var result = await toolCall.InvokeAsync<string>();
+          var content = result.IsFailure ? result.Error.Message : result.Value ?? string.Empty;
+          toolResultContent = new ToolResultContent(toolCall.ToolUse.Id, content);
+        }
+
         activity?.SetTag("output", JsonSerializer.Serialize(msgCompleteData.Message, JSON.Options));
       }
 
       yield return e.Data;
+    }
+
+    if (toolResultContent is not null)
+    {
+      yield return new ToolResultEventData(toolResultContent);
     }
   }
 

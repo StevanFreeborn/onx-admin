@@ -15,6 +15,9 @@
   const isThinking = ref(false);
   const isUploading = ref(false);
   const conversation = ref<Message[]>([]);
+  const conversationWithoutToolResults = computed(() =>
+    conversation.value.filter(m => !m.content.some(c => c.type === 'tool_result'))
+  );
   const attachments = ref<Attachment[]>([]);
 
   const chatService = new ChatService();
@@ -38,6 +41,21 @@
 
   function parseMarkdownToHTML(text: string) {
     return marked.parse(text) as string;
+  }
+
+  function getToolResult(id: string) {
+    let result = '';
+
+    for (const message of conversation.value) {
+      for (const content of message.content) {
+        if (content.type === 'tool_result' && content.tool_use_id === id) {
+          result = content.content;
+          break;
+        }
+      }
+    }
+
+    return parseMarkdownToHTML(result);
   }
 
   function scrollToBottom() {
@@ -129,42 +147,61 @@
     await nextTick();
     scrollToBottom();
 
-    try {
-      const events = chatService.generateResponse(conversation.value);
+    let hasToolResult = false;
 
-      for await (const event of events) {
-        switch (event.type) {
-          case 'message_start':
-            isThinking.value = false;
-            break;
-          case 'content_block_delta':
-            switch (event.delta.type) {
-              case 'text_delta':
-                llmResponse.value += event.delta.text;
-                scrollToBottom();
-                break;
-              default:
-                break;
-            }
-            break;
-          case 'message_complete':
-            conversation.value.push({
-              role: event.message.role,
-              content: event.message.content,
-            });
-            llmResponse.value = '';
-            break;
-          default:
-            break;
+    do {
+      try {
+        isThinking.value = true;
+
+        const events = chatService.generateResponse(conversation.value);
+
+        for await (const event of events) {
+          switch (event.type) {
+            case 'message_start':
+              isThinking.value = false;
+              break;
+            case 'content_block_delta':
+              switch (event.delta.type) {
+                case 'text_delta':
+                  llmResponse.value += event.delta.text;
+                  scrollToBottom();
+                  break;
+                default:
+                  break;
+              }
+              break;
+            case 'message_delta':
+              isThinking.value = event.delta.stop_reason === 'tool_use';
+              break;
+            case 'message_complete':
+              conversation.value.push({
+                role: event.message.role,
+                content: event.message.content,
+              });
+              llmResponse.value = '';
+              break;
+            case 'tool_result':
+              conversation.value.push({
+                role: event.message.role,
+                content: event.message.content,
+              });
+              break;
+            default:
+              break;
+          }
+        }
+
+        hasToolResult = conversation.value[conversation.value.length - 1].content.some(
+          c => c.type === 'tool_result'
+        );
+      } catch (error) {
+        isThinking.value = false;
+
+        if (error instanceof Error) {
+          alert(error.message);
         }
       }
-    } catch (error) {
-      isThinking.value = false;
-
-      if (error instanceof Error) {
-        alert(error.message);
-      }
-    }
+    } while (hasToolResult);
   }
 
   async function handlePromptKeydown(e: KeyboardEvent) {
@@ -247,7 +284,7 @@
   <div class="container">
     <div class="messages-container" ref="messagesContainer">
       <div
-        v-for="[index, message] in conversation.entries()"
+        v-for="[index, message] in conversationWithoutToolResults.entries()"
         v-bind:key="index"
         :class="`message message-${message.role}`"
       >
@@ -261,15 +298,18 @@
             class="message-wrapper"
             v-html="`${parseMarkdownToHTML(content.text)}`"
           ></div>
-          <div v-if="content.type === 'tool_use'" class="tool-use">
+          <details v-if="content.type === 'tool_use'" class="tool">
             <!-- TODO: Need to present any corresponding tool result -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
-              <path
-                d="M352 320c88.4 0 160-71.6 160-160c0-15.3-2.2-30.1-6.2-44.2c-3.1-10.8-16.4-13.2-24.3-5.3l-76.8 76.8c-3 3-7.1 4.7-11.3 4.7H336c-8.8 0-16-7.2-16-16V118.6c0-4.2 1.7-8.3 4.7-11.3l76.8-76.8c7.9-7.9 5.4-21.2-5.3-24.3C382.1 2.2 367.3 0 352 0C263.6 0 192 71.6 192 160c0 19.1 3.4 37.5 9.5 54.5L19.9 396.1C7.2 408.8 0 426.1 0 444.1C0 481.6 30.4 512 67.9 512c18 0 35.3-7.2 48-19.9L297.5 310.5c17 6.2 35.4 9.5 54.5 9.5zM80 408a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"
-              />
-            </svg>
-            <p>{{ content.name }}</p>
-          </div>
+            <summary class="tool-use">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
+                <path
+                  d="M352 320c88.4 0 160-71.6 160-160c0-15.3-2.2-30.1-6.2-44.2c-3.1-10.8-16.4-13.2-24.3-5.3l-76.8 76.8c-3 3-7.1 4.7-11.3 4.7H336c-8.8 0-16-7.2-16-16V118.6c0-4.2 1.7-8.3 4.7-11.3l76.8-76.8c7.9-7.9 5.4-21.2-5.3-24.3C382.1 2.2 367.3 0 352 0C263.6 0 192 71.6 192 160c0 19.1 3.4 37.5 9.5 54.5L19.9 396.1C7.2 408.8 0 426.1 0 444.1C0 481.6 30.4 512 67.9 512c18 0 35.3-7.2 48-19.9L297.5 310.5c17 6.2 35.4 9.5 54.5 9.5zM80 408a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"
+                />
+              </svg>
+              <p>{{ content.name }}</p>
+            </summary>
+            <div class="tool-result" v-html="getToolResult(content.id)"></div>
+          </details>
         </div>
       </div>
       <div v-if="llmResponse.trim() !== ''" class="message message-assistant">
@@ -427,11 +467,12 @@
             & .tool-use {
               display: flex;
               align-items: center;
-              gap: 0.25rem;
+              gap: 0.5rem;
 
               & svg {
                 width: 1rem;
                 height: 1rem;
+                flex-shrink: 0;
               }
             }
 
@@ -441,10 +482,6 @@
               color: var(--white);
               padding: 0.5rem 1rem;
               border-radius: 0.5rem;
-            }
-
-            & .tool-result.error {
-              background-color: rgba(255, 0, 0, 0.6);
             }
           }
 

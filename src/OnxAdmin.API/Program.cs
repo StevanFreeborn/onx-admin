@@ -20,10 +20,11 @@ builder.Services
   .AddOpenTelemetry()
   .WithTracing(tracing => tracing.AddSource(Instrumentation.ActivitySourceName));
 
-builder.Services.AddAgents();
+builder.Services.AddOnspring();
 builder.Services.AddAnthropic();
 builder.Services.AddMemory();
 builder.Services.AddAttachmentService();
+builder.Services.AddAgents();
 
 if (builder.Configuration.GetValue("GenerateEmbeddings", false))
 {
