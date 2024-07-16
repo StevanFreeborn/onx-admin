@@ -7,3 +7,11 @@ static class MessageExtensions
     return message.Content.OfType<TextContent>().FirstOrDefault()?.Text ?? string.Empty;
   }
 }
+
+static class MessageResponseExtensions
+{
+  public static string GetText(this MessageResponse messageResponse)
+  {
+    return messageResponse.Content.OfType<TextContent>().FirstOrDefault()?.Text ?? string.Empty;
+  }
+}

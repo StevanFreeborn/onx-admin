@@ -95,6 +95,28 @@ body {
 
 /* style message html parsed from markdown */
 .messages-container {
+
+  ol,
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-left: 1rem;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  & a {
+    color: #2196f3;
+    text-decoration: none;
+  }
+
+  & a:hover {
+    text-decoration: underline;
+  }
+
   & pre {
     overflow-x: auto;
     background-color: var(--secondary-background-color);
@@ -115,13 +137,13 @@ body {
 
   & th,
   & td {
-    border: 1px solid #212121;
+    border: 1px solid var(--secondary-black);
     padding: 0.5rem;
     text-align: left;
   }
 
   & th {
-    background-color: #212121;
+    background-color: var(--secondary-black);
   }
 
   & tr:nth-child(odd) {
@@ -129,6 +151,6 @@ body {
   }
 
   & tr:nth-child(even) {
-    background-color: #212121;
+    background-color: var(--secondary-black);
   }
 }

@@ -133,14 +133,16 @@
       return;
     }
 
-    // TODO: Add any attachments to the conversation
-    // so LLM has a reference to them.
+    const userInput = `${promptText.value.trim()} ${attachments.value
+      .map(a => `<p class="uploaded-attachment" data-attachment-id="${a.id}">${a.file.name}</p>`)
+      .join('')}`;
+
     conversation.value.push({
       role: 'user',
       content: [
         {
           type: 'text',
-          text: promptText.value,
+          text: userInput,
         },
       ],
     });

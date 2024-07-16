@@ -22,6 +22,11 @@ class TopicSentryAgent(
     using var activity = _activitySource.StartActivity(nameof(ExecuteTaskAsync));
     activity?.SetTag("input", input);
 
+    if (string.IsNullOrWhiteSpace(input))
+    {
+      return new TopicResponse(false, "Unable to determine if topic is about Onspring because no input was provided");
+    }
+
     var prompt = GeneratePrompt(input);
     var request = new MessageRequest(
       AnthropicModels.Claude35Sonnet,

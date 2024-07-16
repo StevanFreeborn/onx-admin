@@ -14,7 +14,10 @@ class FindAppByNameTool(
 
   private readonly IOnspringAdmin _admin = admin;
 
-  public async Task<string> FindAppByName(string appName)
+  public async Task<string> FindAppByName(
+    [FunctionParameter("The name of the app to look for.", required: true)]
+    string appName
+  )
   {
     return await _admin.PerformActionAsync(async page =>
     {

@@ -1,3 +1,4 @@
+
 namespace OnxAdmin.API.Services;
 
 public class FileSystemAttachmentService(
@@ -22,6 +23,21 @@ public class FileSystemAttachmentService(
     await using var fileStream = _fileSystem.File.Create(filePath);
     await attachment.OpenReadStream().CopyToAsync(fileStream);
     return attachmentId;
+  }
+
+  public Task<string> GetAttachmentExtensionAsync(string attachmentId)
+  {
+    var directoryPath = _fileSystem.Path.Combine(_env.ContentRootPath, AttachmentsDirectory, attachmentId);
+    var filePath = _fileSystem.Directory.GetFiles(directoryPath).First();
+    var extension = _fileSystem.Path.GetExtension(filePath);
+    return Task.FromResult(extension);
+  }
+
+  public async Task<IEnumerable<string>> GetAttachmentLinesAsync(string attachmentId)
+  {
+    var directoryPath = _fileSystem.Path.Combine(_env.ContentRootPath, AttachmentsDirectory, attachmentId);
+    var filePath = _fileSystem.Directory.GetFiles(directoryPath).First();
+    return await _fileSystem.File.ReadAllLinesAsync(filePath);
   }
 
   public Task<bool> RemoveAttachmentAsync(string attachmentId)
