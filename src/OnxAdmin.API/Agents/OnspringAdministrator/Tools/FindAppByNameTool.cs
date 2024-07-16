@@ -4,7 +4,7 @@ class FindAppByNameTool(
   IOnspringAdmin admin
 ) : IOnspringAdministratorTool
 {
-  private const string Name = "Find App";
+  private const string Name = "Find_App_By_Name";
   private const string Description = """
     This tool helps you find an app in Onspring by searching for its name.
     To use this tool you will need to provide the name of the app you are looking for.
