@@ -6,4 +6,5 @@ interface IAttachmentService
   Task<bool> RemoveAttachmentAsync(string attachmentId);
   Task<string> GetAttachmentExtensionAsync(string attachmentId);
   Task<IEnumerable<string>> GetAttachmentLinesAsync(string attachmentId);
+  Task<Attachment> GetAttachmentAsync(string attachmentId);
 }

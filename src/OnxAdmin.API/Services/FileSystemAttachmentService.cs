@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace OnxAdmin.API.Services;
 
@@ -40,6 +41,26 @@ public class FileSystemAttachmentService(
     return await _fileSystem.File.ReadAllLinesAsync(filePath);
   }
 
+  public async Task<Attachment> GetAttachmentAsync(string attachmentId)
+  {
+    var directoryPath = _fileSystem.Path.Combine(_env.ContentRootPath, AttachmentsDirectory, attachmentId);
+    var filePath = _fileSystem.Directory.GetFiles(directoryPath).First();
+    var fileName = _fileSystem.Path.GetFileName(filePath);
+
+    var provider = new FileExtensionContentTypeProvider();
+
+    if (provider.TryGetContentType(filePath, out string? contentType) is false)
+    {
+      contentType = "application/octet-stream";
+    }
+
+    var fileStream = _fileSystem.File.OpenRead(filePath);
+    var memoryStream = new MemoryStream();
+    await fileStream.CopyToAsync(memoryStream);
+    memoryStream.Position = 0;
+    return new(attachmentId, fileName, contentType, memoryStream);
+  }
+
   public Task<bool> RemoveAttachmentAsync(string attachmentId)
   {
     try
@@ -54,3 +75,5 @@ public class FileSystemAttachmentService(
     }
   }
 }
+
+public record Attachment(string Id, string FileName, string ContentType, MemoryStream Stream);

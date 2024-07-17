@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref, nextTick, onMounted } from 'vue';
+  import { computed, ref, nextTick, onMounted, watch } from 'vue';
   import { ChatService } from '@/services/chatService';
   import type { Attachment, Message } from '@/types';
   import { marked } from 'marked';
@@ -37,6 +37,12 @@
     });
 
     resizeObserver.observe(prompt.value);
+  });
+
+  watch(isThinking, value => {
+    if (value) {
+      scrollToBottom();
+    }
   });
 
   function parseMarkdownToHTML(text: string) {
@@ -161,9 +167,6 @@
 
         for await (const event of events) {
           switch (event.type) {
-            case 'message_start':
-              isThinking.value = false;
-              break;
             case 'content_block_delta':
               switch (event.delta.type) {
                 case 'text_delta':
@@ -173,9 +176,6 @@
                 default:
                   break;
               }
-              break;
-            case 'message_delta':
-              isThinking.value = event.delta.stop_reason === 'tool_use';
               break;
             case 'message_complete':
               conversation.value.push({
@@ -199,13 +199,13 @@
           c => c.type === 'tool_result'
         );
       } catch (error) {
-        isThinking.value = false;
-
         if (error instanceof Error) {
           alert(error.message);
         }
       }
     } while (hasToolResult);
+
+    isThinking.value = false;
   }
 
   async function handlePromptKeydown(e: KeyboardEvent) {
@@ -480,6 +480,7 @@
             }
 
             & .tool-result {
+              margin-top: 0.5rem;
               margin-left: 1rem;
               background-color: rgba(0, 128, 0, 0.6);
               color: var(--white);
