@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnxAdmin.Web", "OnxAdmin.Web\OnxAdmin.Web.csproj", "{093237EA-390E-4FA0-8E70-95F723B188FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnxAdmin.API", "OnxAdmin.API\OnxAdmin.API.csproj", "{E4AD3180-42EB-4131-A00C-423797AF25B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnxAdmin.AppHost", "OnxAdmin.AppHost\OnxAdmin.AppHost.csproj", "{B8C8D742-E10E-401F-8CE9-4B9A108CD46B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnxAdmin.ServiceDefaults", "OnxAdmin.ServiceDefaults\OnxAdmin.ServiceDefaults.csproj", "{3C6D64BA-7580-4017-9566-DD8EC1D88D9C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,9 +18,17 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{093237EA-390E-4FA0-8E70-95F723B188FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{093237EA-390E-4FA0-8E70-95F723B188FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{093237EA-390E-4FA0-8E70-95F723B188FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{093237EA-390E-4FA0-8E70-95F723B188FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4AD3180-42EB-4131-A00C-423797AF25B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4AD3180-42EB-4131-A00C-423797AF25B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4AD3180-42EB-4131-A00C-423797AF25B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4AD3180-42EB-4131-A00C-423797AF25B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8C8D742-E10E-401F-8CE9-4B9A108CD46B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8C8D742-E10E-401F-8CE9-4B9A108CD46B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8C8D742-E10E-401F-8CE9-4B9A108CD46B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8C8D742-E10E-401F-8CE9-4B9A108CD46B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C6D64BA-7580-4017-9566-DD8EC1D88D9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C6D64BA-7580-4017-9566-DD8EC1D88D9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C6D64BA-7580-4017-9566-DD8EC1D88D9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C6D64BA-7580-4017-9566-DD8EC1D88D9C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

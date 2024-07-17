@@ -1,0 +1,156 @@
+/* css resets */
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul {
+  list-style-type: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* site styles */
+/* basic light and dark mode */
+:root {
+  --white: #f9f9f9;
+  --black: #212121;
+  --secondary-black: #171717;
+  --secondary-white: #f5f5f5;
+
+  --background-color: var(--white);
+  --secondary-background-color: var(--secondary-white);
+  --text-color: var(--black);
+}
+
+
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: var(--black);
+    --secondary-background-color: var(--secondary-black);
+    --text-color: var(--white);
+  }
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* style message html parsed from markdown */
+.messages-container {
+
+  ol,
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-left: 1rem;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  & a {
+    color: #2196f3;
+    text-decoration: none;
+  }
+
+  & a:hover {
+    text-decoration: underline;
+  }
+
+  & pre {
+    overflow-x: auto;
+    background-color: var(--secondary-background-color);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  & code:not(pre code) {
+    background-color: var(--secondary-background-color);
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+  }
+
+  & table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  & th,
+  & td {
+    border: 1px solid var(--secondary-black);
+    padding: 0.5rem;
+    text-align: left;
+  }
+
+  & th {
+    background-color: var(--secondary-black);
+  }
+
+  & tr:nth-child(odd) {
+    background-color: var(--black);
+  }
+
+  & tr:nth-child(even) {
+    background-color: var(--secondary-black);
+  }
+}

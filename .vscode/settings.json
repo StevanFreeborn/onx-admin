@@ -1,5 +1,23 @@
 {
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
   "editor.formatOnSave": true,
-  "dotnet.defaultSolution": "src/OnxAdmin.sln",
-  "cSpell.words": ["Prerendered"]
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "dotnet.defaultSolution": "src/server/Server.sln",
+  "cSpell.words": [
+    "Antiforgery",
+    "Chunker",
+    "Codeblaze",
+    "Gridcell",
+    "Hardline",
+    "IAPI",
+    "iframe",
+    "Markdig",
+    "Ollama",
+    "Prerendered",
+    "Softline",
+    "Unroute",
+    "Validatable"
+  ]
 }
