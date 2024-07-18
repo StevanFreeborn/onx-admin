@@ -44,6 +44,7 @@ class PageFactory(IOptions<OnspringOptions> options) : IPageFactory, IAsyncDispo
           ["Content-Type"] = "application/json",
         },
         DataObject = body,
+        Timeout = 110_000,
       });
 
       var text = await loginResponse.TextAsync();
@@ -72,7 +73,7 @@ class PageFactory(IOptions<OnspringOptions> options) : IPageFactory, IAsyncDispo
     }
 
     var playwright = await Playwright.CreateAsync();
-    var browser = await playwright.Chromium.LaunchAsync(new() { Headless = false });
+    var browser = await playwright.Chromium.LaunchAsync(new() { Headless = true });
 
     Browser = browser;
 

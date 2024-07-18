@@ -12,7 +12,7 @@ var ollama = builder.AddContainer("ollama", "ollama/ollama")
   .WithBindMount("../OnxAdmin.Containers/Ollama/entrypoint.sh", "/entrypoint.sh")
   .WithHttpEndpoint(targetPort: 11434)
   .WithExternalHttpEndpoints()
-  // .WithEntrypoint("/entrypoint.sh")
+  .WithEntrypoint("/entrypoint.sh")
   .PublishAsContainer();
 
 var api = builder.AddProject<Projects.OnxAdmin_API>("api")

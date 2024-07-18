@@ -101,7 +101,6 @@ class DraftAppRecordTool(
           }
 
           var referencedApp = "Not Applicable";
-          var referencedAppDisplayField = "Not Applicable";
 
           if (fieldTypeTrimmed is "Reference" or "Parallel Reference")
           {
@@ -123,25 +122,6 @@ class DraftAppRecordTool(
             var match = nameRegex.Match(referenceText ?? string.Empty);
             referencedApp = match.Groups[1].Value;
 
-            await page.GotoAsync($"/Admin/App");
-            var filterInput = page.GetByPlaceholder(new Regex("filter by", RegexOptions.IgnoreCase));
-
-            await filterInput.ClearAsync();
-            await filterInput.PressSequentiallyAsync(referencedApp, new() { Delay = 150 });
-            await page.WaitForResponseAsync(new Regex("/Admin/App/AppsListRead", RegexOptions.IgnoreCase));
-
-            var referencedAppRow = page.GetByRole(AriaRole.Row, new() { NameRegex = new Regex(appName, RegexOptions.IgnoreCase), Exact = true }).First;
-            var isReferencedAppRowVisible = await referencedAppRow.IsVisibleAsync();
-
-            if (isReferencedAppRowVisible is not false)
-            {
-              await referencedAppRow.ClickAsync();
-              await page.WaitForURLAsync(new Regex(@"/Admin/App/\d+", RegexOptions.IgnoreCase));
-
-              var displayLinkField = await page.Locator(".label:has-text('Display Link Field') + .text").TextContentAsync();
-              referencedAppDisplayField = displayLinkField?.Trim() ?? string.Empty;
-            }
-
             await fieldDialog.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("cancel", RegexOptions.IgnoreCase) }).ClickAsync();
           }
 
@@ -154,8 +134,46 @@ class DraftAppRecordTool(
               ? "Not Applicable"
               : string.Join(", ", possibleValues),
             ReferencedApp = referencedApp,
-            ReferencedAppDisplayField = referencedAppDisplayField
           });
+        }
+      }
+
+      foreach (var reference in requiredFields.Where(f => f.Type is "Reference" or "Parallel Reference"))
+      {
+        await page.GotoAsync($"/Admin/App");
+        var filterInput = page.GetByPlaceholder(new Regex("filter by", RegexOptions.IgnoreCase));
+
+        await filterInput.ClearAsync();
+        await filterInput.PressSequentiallyAsync(reference.ReferencedApp, new() { Delay = 150 });
+        await page.WaitForResponseAsync(new Regex("/Admin/App/AppsListRead", RegexOptions.IgnoreCase));
+
+        var appGrid = page.Locator("#grid");
+        var scrollableElement = appGrid.Locator(".k-grid-content.k-auto-scrollable").First;
+
+        var pager = page.Locator(".k-pager-info").First;
+        var pagerText = await pager.InnerTextAsync();
+        var totalNumOfApps = int.Parse(pagerText.Trim().Split(" ")[0]);
+        var appRows = appGrid.GetByRole(AriaRole.Row);
+        var appRowsCount = await appRows.CountAsync();
+
+        do
+        {
+          await scrollableElement.EvaluateAsync("el => (el.scrollTop = el.scrollHeight)");
+          await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+          appRowsCount = await appRows.CountAsync();
+        } while (appRowsCount < totalNumOfApps);
+
+        var referencedAppRow = page.GetByRole(AriaRole.Row, new() { NameRegex = new Regex(reference.ReferencedApp, RegexOptions.IgnoreCase) }).Last;
+        await referencedAppRow.ScrollIntoViewIfNeededAsync();
+        var isReferencedAppRowVisible = await referencedAppRow.IsVisibleAsync();
+
+        if (isReferencedAppRowVisible is not false)
+        {
+          await referencedAppRow.ClickAsync();
+          await page.WaitForURLAsync(new Regex(@"/Admin/App/\d+", RegexOptions.IgnoreCase));
+
+          var displayLinkField = await page.Locator(".label:has-text('Display Link Field') + .text").TextContentAsync();
+          reference.ReferencedAppDisplayField = displayLinkField?.Trim() ?? string.Empty;
         }
       }
 
@@ -183,12 +201,12 @@ class DraftAppRecordTool(
   }
 }
 
-record RequiredField
+class RequiredField
 {
-  public string Tab { get; init; } = string.Empty;
-  public string Name { get; init; } = string.Empty;
-  public string Type { get; init; } = string.Empty;
-  public string PossibleValues { get; init; } = string.Empty;
-  public string ReferencedApp { get; init; } = string.Empty;
-  public string ReferencedAppDisplayField { get; init; } = string.Empty;
+  public string Tab { get; set; } = string.Empty;
+  public string Name { get; set; } = string.Empty;
+  public string Type { get; set; } = string.Empty;
+  public string PossibleValues { get; set; } = "Not Applicable";
+  public string ReferencedApp { get; set; } = "Not Applicable";
+  public string ReferencedAppDisplayField { get; set; } = "Not Applicable";
 }
