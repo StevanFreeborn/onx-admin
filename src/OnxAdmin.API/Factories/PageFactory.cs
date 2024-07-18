@@ -72,7 +72,7 @@ class PageFactory(IOptions<OnspringOptions> options) : IPageFactory, IAsyncDispo
     }
 
     var playwright = await Playwright.CreateAsync();
-    var browser = await playwright.Chromium.LaunchAsync(new() { Headless = true });
+    var browser = await playwright.Chromium.LaunchAsync(new() { Headless = false });
 
     Browser = browser;
 
